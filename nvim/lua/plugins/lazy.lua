@@ -3,41 +3,13 @@ require('lazy').setup({
 
   'ThePrimeagen/vim-be-good',
   {
-    'glepnir/dashboard-nvim',
-    event = 'VimEnter',
-    config = function()
-      require('dashboard').setup({
-        theme = 'hyper',
-        config = {
-          week_header = {
-            enable = true,
-          },
-          shortcut = {
-            { desc = ' Update', group = '@property', action = 'Lazy update', key = 'u' },
-            {
-              icon = ' ',
-              icon_hl = '@variable',
-              desc = 'Files',
-              group = 'Label',
-              action = 'Telescope find_files',
-              key = 'f',
-            },
-          },
-        },
-      })
-    end,
-    dependencies = { { 'nvim-tree/nvim-web-devicons' } }
+    'goolord/alpha-nvim',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    config = function ()
+        require'alpha'.setup(require'alpha.themes.dashboard'.config)
+    end
   },
-  -- Autopairs
-
-  {
-    "windwp/nvim-autopairs",
-    opts = {},
-  },
-  --
-  -- Git related plugins
-  'tpope/vim-fugitive',
-  'tpope/vim-rhubarb',
+  
   'christoomey/vim-tmux-navigator',
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
@@ -54,7 +26,10 @@ require('lazy').setup({
 
       -- Useful status updates for LSP
       -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
-      { 'j-hui/fidget.nvim',       opts = {} },
+      { 'j-hui/fidget.nvim',
+        opts = {},
+        tag = 'legacy',
+      },
 
       -- Additional lua configuration, makes nvim stuff amazing!
       'folke/neodev.nvim',

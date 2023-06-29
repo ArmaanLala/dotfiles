@@ -42,7 +42,7 @@ vim.keymap.set('n', '<leader>h', function()
   -- You can pass additional configuration to telescope to change theme, layout, etc.
   vim.lsp.buf.hover()
 end, { desc = 'Show Code [H]over' })
-vim.keymap.set("n", "<leader>ee", '<Cmd>Neotree toggle<CR>', { desc = "Open [E]xplorer" })
+vim.keymap.set("n", "<leader>ee", '<Cmd>Neotree toggle position=right<CR>', { desc = "Open [E]xplorer" })
 vim.api.nvim_create_autocmd('InsertLeave', {
   command = 'update',
 })
