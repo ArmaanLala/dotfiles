@@ -46,7 +46,19 @@ source <(fzf --zsh) # allow for fzf history widget
 bindkey "^a" beginning-of-line
 bindkey "^e" end-of-line
 bindkey '^R' fzf-history-widget
+bindkey -s '^S' "source ~/.config/zsh/.zshrc^M"
 
+fzf-ps() {
+    local output=$(fzf-ps.sh)
+    if [ -n "$output" ]; then
+        LBUFFER="$LBUFFER$output"
+    fi
+    zle redisplay
+}
+zle -N fzf-ps
+bindkey '^P' fzf-ps
+
+# zoxide
 eval "$(zoxide init zsh)"
 
 # autosuggestions
@@ -56,3 +68,6 @@ source "$XDG_CONFIG_HOME/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 # syntax highlighting
 # requires zsh-syntax-highlighting package
 source "$XDG_CONFIG_HOME/zsh/plugins/zsh-highlighting/zsh-syntax-highlighting.zsh"
+
+export GOPATH=$HOME/go
+export PATH="$GOPATH/bin:$PATH"

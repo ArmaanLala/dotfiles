@@ -18,7 +18,7 @@ export LESSHISTFILE="$XDG_CACHE_HOME/less_history"
 export PYTHON_HISTORY="$XDG_DATA_HOME/python/history"
 
 # add scripts to path
-export PATH="$XDG_CONFIG_HOME/scripts:$PATH"
+export PATH="$HOME/scripts:$PATH"
 
 # colored less + termcap vars
 export LESS="R --use-color -Dd+r -Du+b"
