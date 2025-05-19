@@ -19,3 +19,4 @@ k="killall" \
 p="ps aux | grep $1" \
 yay="paru" \
 lz="lazygit" \
+i="$HOME/scripts/install.sh"
