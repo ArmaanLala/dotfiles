@@ -38,7 +38,7 @@ SAVEHIST=1000000
 HISTFILE="$XDG_CACHE_HOME/zsh_history" # move histfile to cache
 HISTCONTROL=ignoreboth # consecutive duplicates & commands starting with space are not saved
 
-PROMPT='%(?.%F{green}√.%F{red}%? X)%f %B%F{240}%1~%f%b > '
+PROMPT='%(?.%F{green}√.%F{red}%? X)%f %B%F{245}%1~%f%b > '
 
 # fzf setup
 source <(fzf --zsh) # allow for fzf history widget
