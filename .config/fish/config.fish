@@ -2,8 +2,22 @@ if status is-interactive
     # Commands to run in interactive sessions can go here
 end
 
-# Created by `pipx` on 2025-04-22 00:18:28
-set PATH $PATH /home/armaan/.local/bin
+alias cd="z" 
+alias c="clear" 
+alias v="nvim" 
+alias cat="bat" 
+alias grep="rg --color=auto" 
+alias shell="exec $SHELL -l" 
+alias fk="sudo !!" 
+alias mv="mv -i" 
+alias rm="rm -Iv" 
+alias df="df -h" 
+alias du="du -h -d 1" 
+alias k="killall" 
+alias p="ps aux | grep $1" 
+alias yay="paru" 
+alias lz="lazygit" 
+alias i="$HOME/scripts/install.sh"
 
-alias cpg="/usr/local/bin/advcp -g"
-alias mvg="/usr/local/bin/advmv -g"
+zoxide init fish | source
+starship init fish | source
