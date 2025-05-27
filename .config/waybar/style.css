@@ -1,3 +1,10 @@
+@define-color bg #282c34;
+@define-color blue #46d9ff;
+@define-color green #98be65;
+@define-color yellow #f1fa8c;
+@define-color pink #f38ba8;
+@define-color white #cdd6f4;
+
 * {
   border: none;
   border-radius: 0;
@@ -5,14 +12,13 @@
   font-family: Ubuntu;
   font-size: 13px;
   font-weight: bold;    
-
 }
 
 window#waybar {
-  background-color: #282c34;
+  background-color: @bg;
   transition-property: background-color;
   transition-duration: 0.5s;
-	color: #cdd6f4;
+  color: @white;
 }
 
 window#waybar.hidden {
@@ -33,24 +39,24 @@ window#waybar.hidden {
   padding: 2px 12px;
   margin: 4px 3px;
   border-radius: 4px;
-  background-color: #1e1e2e;
-  color: #cdd6f4;
+  background-color: @bg;
+  color: @white;
 }
 
 #workspaces button.active {
-  color: #1e1e2e;
-  background-color: #cdd6f4;
+  color: @bg;
+  background-color: @white;
 }
 
 #workspaces button:hover {
   box-shadow: inherit;
   text-shadow: inherit;
-  color: #1e1e2e;
-  background-color: #cdd6f4;
+  color: @bg;
+  background-color: @white;
 }
 
 #workspaces button.urgent {
-  background-color: #f38ba8;
+  background-color: @pink;
 }
 
 #cpu,
@@ -59,6 +65,7 @@ window#waybar.hidden {
 #custom-power,
 #custom-diskfree,
 #battery,
+#custom-gpu-usage,
 #backlight,
 #wireplumber,
 #network,
@@ -67,20 +74,28 @@ window#waybar.hidden {
   border-radius: 4px;
   margin: 4px 3px;
   padding: 2px 12px;
-  background-color: #282c34;
-  color: #282c34;
+  background-color: @bg;
+  color: @bg;
 }
+
 #custom-kernel {
-  background-color: #46d9ff;
+  background-color: @blue;
 }
 
 #custom-power {
   margin-right: 6px;
-  background-color: #f2cdcd;
+  background-color: @green;
+  font-size: 20px;
+  padding: 0 10px;
+  border-radius: 4px;
+}
+
+#custom-power:hover {
+  background-color: @yellow;
 }
 
 #custom-diskfree {
-  background-color: #fc9867;
+  background-color: @green;
 }
 
 #custom-logo {
@@ -89,58 +104,61 @@ window#waybar.hidden {
   margin-left: 5px;
   font-size: 15px;
   border-radius: 8px 0px 0px 8px;
-  color: #1793d1;
+  color: @blue;
 }
 
 #cpu {
-  background-color: #98be65;
+  background-color: @blue;
 }
 
+#custom-gpu-usage {
+  background-color: @green;
+}
 
 #memory {
-  background-color: #46d9ff;
+  background-color: @blue;
 }
 
 #battery {
-  background-color: #f38ba8;
+  background-color: @pink;
 }
 
 #battery.warning,
 #battery.critical,
 #battery.urgent {
-  background-color: #ff6c6b;
-  color: #f1fa8c;
+  background-color: @yellow;
+  color: @bg;
 }
 
 #battery.charging {
-  background-color: #98be65;
-  color: #181825;
+  background-color: @green;
+  color: @bg;
 }
 
 #backlight {
-    background-color: #ff6c6b;
+  background-color: @yellow;
 }
 
 #wireplumber {
-  background-color: #46d9ff;
+  background-color: @blue;
 }
 
 #network {
-  background-color: #98be65;
+  background-color: @green;
   padding-right: 17px;
 }
 
 #clock {
-  background-color: #98be65;
+  background-color: @green;
 }
 
 tooltip {
   border-radius: 8px;
   padding: 15px;
-  background-color: #131822;
+  background-color: @bg;
 }
 
 tooltip label {
   padding: 5px;
-  background-color: #131822;
+  background-color: @bg;
 }

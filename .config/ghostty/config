@@ -7,5 +7,8 @@ clipboard-write = allow
 copy-on-select = false
 font-size = 14
 font-family = JetBrainsMono
+theme = Brogrammer
+# background = #d5573bff
+
 #config-file= ~/.cache/wal/ghostty.conf
 #theme=/Applications/Ghostty.app/Contents/Resources/ghostty/themes/IC_Green_PPL

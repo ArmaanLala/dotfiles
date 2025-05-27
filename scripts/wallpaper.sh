@@ -11,7 +11,7 @@ else
 	random_image=$(ls *.png *.jpg | shuf -n 1)
 fi
 
-wal -i "$random_image" &
+# wal -i "$random_image" &
 swaybg --image "$random_image" &
-pkill waybar
-setsid -f waybar
+# pkill waybar
+# setsid -f waybar
