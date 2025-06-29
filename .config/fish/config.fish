@@ -18,6 +18,7 @@ alias p="ps aux | grep $1"
 alias yay="paru" 
 alias lz="lazygit" 
 alias i="$HOME/scripts/install.sh"
+alias mb="$HOME/scripts/microbin.sh"
 
 zoxide init fish | source
 starship init fish | source
