@@ -1,0 +1,27 @@
+#!/bin/bash
+
+DERIVED_DATA_PATH="$HOME/Library/Developer/Xcode/DerivedData"
+
+delete_derived_data() {
+  sudo rm -rf "$DERIVED_DATA_PATH"
+  if [ $? -eq 0 ]; then
+    echo -e "\e[32mSuccessfully deleted DerivedData folder.\e[0m"
+    return 0
+  else
+    if [ ! -d "$DERIVED_DATA_PATH" ]; then
+      echo -e "\e[33mDerivedData folder does not exist.\e[0m"
+      return 0
+    fi
+    echo -e "\e[31mFailed to delete DerivedData folder.\e[0m"
+    return 1
+  fi
+}
+
+while true; do
+  if delete_derived_data; then
+    exit 0
+  else
+    sleep 2
+  fi
+done
+

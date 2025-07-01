@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MICROBIN_URL="https://bin.armaanlala.tech"
+MICROBIN_URL="https://paste.armaanlala.tech"
 
 # Color codes
 GREEN="\033[0;32m"
