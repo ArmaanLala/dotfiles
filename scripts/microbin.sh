@@ -32,12 +32,12 @@ mbclean() {
 
 upload_file() {
   info "Uploading file: $1"
-  curl -s -i -X POST "$MICROBIN_URL/upload" -F "file=@$1" | mbclean
+  curl -s -i -X POST "$MICROBIN_URL/upload" -F "file=@$1" -F "syntax_highlight=auto" | mbclean
 }
 
 upload_text() {
   info "Uploading text content"
-  curl -s -i -X POST "$MICROBIN_URL/upload" -F "content=$1" | mbclean
+  curl -s -i -X POST "$MICROBIN_URL/upload" -F "content=$1" -F "syntax_highlight=auto" | mbclean
 }
 
 # Entry point
