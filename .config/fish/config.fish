@@ -10,6 +10,7 @@ if status is-interactive
 end
 
 alias cd="z" 
+alias pman="sudo pacman -S" 
 alias c="clear" 
 alias v="nvim" 
 alias cat="bat" 
