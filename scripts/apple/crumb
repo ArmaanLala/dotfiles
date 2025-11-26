@@ -1,0 +1,71 @@
+#!/bin/bash
+# Show breadcrumb logs from com.apple.virtualization
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print usage
+print_usage() {
+    cat << EOF
+Usage: $(basename "$0") [options]
+
+Show breadcrumb logs from com.apple.virtualization for the last boot
+
+Options:
+  -h, --help  Show this help message
+
+Examples:
+  # Show virtualization breadcrumb logs
+  $(basename "$0")
+EOF
+}
+
+# Parse options
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}[ERROR]${NC} Unknown option: $1"
+            print_usage
+            exit 1
+            ;;
+    esac
+done
+
+echo -e "${BLUE}[INFO]${NC} Searching for system_logs.logarchive..."
+
+# Use fd to find system_logs.logarchive
+LOG_PATH=$(fd system_logs.logarchive 2>/dev/null | head -n 1)
+
+if [ -z "$LOG_PATH" ]; then
+    echo -e "${RED}[ERROR]${NC} Could not find system_logs.logarchive"
+    exit 1
+fi
+
+echo -e "${GREEN}[SUCCESS]${NC} Found log archive at: $LOG_PATH"
+echo -e "${BLUE}[INFO]${NC} Showing breadcrumb logs from com.apple.virtualization..."
+echo
+
+# Show logs with the specified predicate
+LOG_OUTPUT=$(log show "$LOG_PATH" --last boot --predicate 's=com.apple.virtualization AND c=breadcrumb')
+echo "$LOG_OUTPUT"
+
+# Extract and display breadcrumb values
+BREADCRUMBS=$(echo "$LOG_OUTPUT" | grep -oE '\[com\.apple\.virtualization:breadcrumb\] (0x[0-9a-fA-F]+)' | grep -oE '0x[0-9a-fA-F]+' | sort -u)
+
+if [ -n "$BREADCRUMBS" ]; then
+    BREADCRUMB_COUNT=$(echo "$BREADCRUMBS" | wc -l | tr -d ' ')
+    echo
+    echo -e "${GREEN}[SUCCESS]${NC} Found $BREADCRUMB_COUNT unique breadcrumb value(s):"
+    while IFS= read -r crumb; do
+        echo -e "  ${CYAN}$crumb${NC}"
+    done <<< "$BREADCRUMBS"
+fi

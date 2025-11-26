@@ -1,0 +1,239 @@
+#!/bin/sh
+# Custom Xcode installer - Installs Xcode with specific macOS SDK versions using UXI
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print functions
+print_info() { printf "${BLUE}[INFO]${NC} %s\n" "$1"; }
+print_success() { printf "${GREEN}[SUCCESS]${NC} %s\n" "$1"; }
+print_error() { printf "${RED}[ERROR]${NC} %s\n" "$1"; }
+print_warning() { printf "${YELLOW}[WARNING]${NC} %s\n" "$1"; }
+print_info_stderr() { printf "${BLUE}[INFO]${NC} %s\n" "$1" >&2; }
+print_error_stderr() { printf "${RED}[ERROR]${NC} %s\n" "$1" >&2; }
+
+# Print usage information
+print_usage() {
+    echo "Usage: $(basename "$0") [options]"
+    echo
+    echo "Options:"
+    echo "  -t, --train TRAIN       Specify macOS train name"
+    echo "  -b, --build BUILD       Specify macOS build (overrides train)"
+    echo "  -x, --xcode-train TRAIN Specify Xcode train (default: Wonder)"
+    echo "  -y, --xcode-build BUILD Specify Xcode build (overrides xcode-train)"
+    echo "  -i, --ios-train TRAIN   Specify iOS train name (optional)"
+    echo "  -j, --ios-build BUILD   Specify iOS build (overrides ios-train)"
+    echo "  -n, --name NAME         Specify custom .app name (default: train name)"
+    echo "  -c, --current           Use current macOS train and build"
+    echo "  -h, --help              Show this help message"
+    echo
+    echo "Examples:"
+    echo "  $(basename "$0") -t CheerE                  # Install latest livable CheerE build"
+    echo "  $(basename "$0") -b CheerE22A5295i          # Install specific build"
+    echo "  $(basename "$0") -t CheerE -i SkyG          # Install with iOS SDK from SkyG train"
+}
+
+# Get latest livable build for a train
+get_latest_livable_build() {
+    local train="$1"
+    print_info_stderr "Getting latest livable build for train: $train"
+    
+    local livability_output=$(livability --latest-livable "$train" -q 2>&1)
+    if [ $? -ne 0 ]; then
+        print_error_stderr "Failed to run livability command for train: $train"
+        return 1
+    fi
+    
+    local build_version=$(echo "$livability_output" | grep -o "${train}[0-9][0-9][^0-9][0-9].*" | head -n 1)
+    if [ -z "$build_version" ]; then
+        build_version=$(echo "$livability_output" | grep -o "[0-9][0-9][A-Z][0-9][0-9]*" | head -n 1)
+    fi
+    
+    if [ -z "$build_version" ]; then
+        print_error_stderr "Failed to parse build version from output: $livability_output"
+        return 1
+    fi
+    
+    echo "$build_version"
+    return 0
+}
+
+# Get current macOS build
+get_current_build() {
+    local build=$(sw_vers -buildVersion)
+    if [ -z "$build" ]; then
+        print_error_stderr "Failed to get current build version"
+        return 1
+    fi
+    
+    local train=$(xbs getTrainForBuild -q "$build" 2>/dev/null)
+    if [ -z "$train" ]; then
+        print_error_stderr "Failed to get train for build: $build"
+        return 1
+    fi
+    
+    echo "${train}${build}"
+    return 0
+}
+
+# Initialize variables
+MACOS_TRAIN=""
+MACOS_BUILD=""
+XCODE_TRAIN="WonderC"
+XCODE_BUILD=""
+IOS_TRAIN=""
+IOS_BUILD=""
+USE_CURRENT=false
+CUSTOM_APP_NAME=""
+
+# Parse command line arguments
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -t|--train) MACOS_TRAIN="$2"; shift 2 ;;
+        -b|--build) MACOS_BUILD="$2"; shift 2 ;;
+        -x|--xcode-train) XCODE_TRAIN="$2"; shift 2 ;;
+        -y|--xcode-build) XCODE_BUILD="$2"; shift 2 ;;
+        -i|--ios-train) IOS_TRAIN="$2"; shift 2 ;;
+        -j|--ios-build) IOS_BUILD="$2"; shift 2 ;;
+        -n|--name) CUSTOM_APP_NAME="$2"; shift 2 ;;
+        -c|--current) USE_CURRENT=true; shift ;;
+        -h|--help) print_usage; exit 0 ;;
+        *)
+            if [ -z "$MACOS_TRAIN" ]; then
+                MACOS_TRAIN="$1"
+            else
+                print_error "Unknown option: $1"
+                print_usage
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Determine macOS build
+if [ "$USE_CURRENT" = true ]; then
+    print_info "Using current macOS build"
+    MACOS_BUILD=$(get_current_build)
+    if [ $? -ne 0 ]; then
+        print_error "Failed to get current macOS build"
+        exit 1
+    fi
+    print_success "Current macOS build: $MACOS_BUILD"
+elif [ -n "$MACOS_BUILD" ]; then
+    print_info "Using specified macOS build: $MACOS_BUILD"
+elif [ -n "$MACOS_TRAIN" ]; then
+    print_info "Using train: $MACOS_TRAIN"
+    MACOS_BUILD=$(get_latest_livable_build "$MACOS_TRAIN")
+    if [ $? -ne 0 ]; then
+        print_error "Failed to get macOS build"
+        exit 1
+    fi
+    print_success "Latest livable macOS build: $MACOS_BUILD"
+else
+    printf "${CYAN}Enter train name: ${NC}"
+    read -r MACOS_TRAIN
+    
+    if [ -z "$MACOS_TRAIN" ]; then
+        print_error "Train name is required"
+        exit 1
+    fi
+    
+    print_info "Using train: $MACOS_TRAIN"
+    MACOS_BUILD=$(get_latest_livable_build "$MACOS_TRAIN")
+    if [ $? -ne 0 ]; then
+        print_error "Failed to get macOS build"
+        exit 1
+    fi
+    print_success "Latest livable macOS build: $MACOS_BUILD"
+fi
+
+# Extract train from build if needed
+if [ -z "$MACOS_TRAIN" ]; then
+    MACOS_TRAIN=$(echo "$MACOS_BUILD" | grep -o "^[A-Za-z]*")
+    if [ -z "$MACOS_TRAIN" ]; then
+        print_error "Could not determine train from build: $MACOS_BUILD"
+        exit 1
+    fi
+fi
+
+# Determine Xcode build
+if [ -n "$XCODE_BUILD" ]; then
+    print_info "Using specified Xcode build: $XCODE_BUILD"
+else
+    print_info "Using Xcode train: $XCODE_TRAIN"
+    XCODE_BUILD=$(get_latest_livable_build "$XCODE_TRAIN")
+    if [ $? -ne 0 ]; then
+        print_warning "Failed to get $XCODE_TRAIN Xcode build, trying with macOS train: $MACOS_TRAIN"
+        XCODE_BUILD=$(get_latest_livable_build "$MACOS_TRAIN")
+        if [ $? -ne 0 ]; then
+            print_error "Failed to get Xcode build"
+            exit 1
+        fi
+    fi
+    print_success "Latest livable Xcode build: $XCODE_BUILD"
+fi
+
+# Determine iOS build (only if iOS train or build specified)
+if [ -n "$IOS_BUILD" ]; then
+    print_info "Using specified iOS build: $IOS_BUILD"
+elif [ -n "$IOS_TRAIN" ]; then
+    print_info "Using iOS train: $IOS_TRAIN"
+    IOS_BUILD=$(get_latest_livable_build "$IOS_TRAIN")
+    if [ $? -ne 0 ]; then
+        print_error "Failed to get iOS build"
+        exit 1
+    fi
+    print_success "Latest livable iOS build: $IOS_BUILD"
+fi
+
+# Set Xcode path
+if [ -n "$CUSTOM_APP_NAME" ]; then
+    XCODE_PATH="/Applications/${CUSTOM_APP_NAME}.app"
+    print_info "Using custom app name: ${CUSTOM_APP_NAME}.app"
+else
+    XCODE_PATH="/Applications/${MACOS_BUILD}.app"
+    print_info "Using default app name: ${MACOS_BUILD}.app"
+fi
+
+# Install Xcode
+print_info "Installing Xcode with UXI..."
+print_info "Target path: $XCODE_PATH"
+print_info "macOS build: $MACOS_BUILD"
+print_info "Xcode build: $XCODE_BUILD"
+if [ -n "$IOS_BUILD" ]; then
+    print_info "iOS build: $IOS_BUILD"
+fi
+
+# Build UXI command
+UXI_CMD="uxi install custom-xcode --path \"$XCODE_PATH\" --uxi-server-authentication AppleConnect xcode=\"$XCODE_BUILD\" macos=\"$MACOS_BUILD\""
+
+# Add iOS SDK if specified
+if [ -n "$IOS_BUILD" ]; then
+    UXI_CMD="$UXI_CMD ios=\"$IOS_BUILD\""
+fi
+
+# Add remaining options
+UXI_CMD="$UXI_CMD --kernel-cache-components --firmware-components --embedded-headers"
+
+print_info "Executing command: $UXI_CMD"
+
+eval "$UXI_CMD"
+
+if [ $? -eq 0 ]; then
+    print_success "UXI installation completed successfully!"
+    print_info "Xcode installed at: $XCODE_PATH"
+    print_info "macOS SDK: $MACOS_BUILD"
+    print_info "Xcode version: $XCODE_BUILD"
+    if [ -n "$IOS_BUILD" ]; then
+        print_info "iOS SDK: $IOS_BUILD"
+    fi
+else
+    print_error "UXI installation failed!"
+    exit 1
+fi

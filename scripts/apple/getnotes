@@ -1,0 +1,68 @@
+#!/bin/sh
+# Get submission notes for a project
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print usage
+print_usage() {
+    cat << EOF
+Usage: $(basename "$0") <update> <project> [options]
+
+Get submission notes for a project in an update/train
+
+Arguments:
+  <update>    Golden, Azul18A238a, etc.
+  <project>   JavaScriptCore, MobileSafari, etc.
+
+Options:
+  -h, --help  Show this help message
+  --dry       Show xbs command without executing
+
+Examples:
+  # Get submission notes for JavaScriptCore in Golden
+  $(basename "$0") Golden JavaScriptCore
+EOF
+}
+
+# Parse options
+DRY_RUN=false
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --dry)
+            DRY_RUN=true
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Check arguments
+if [ $# -ne 2 ]; then
+    print_usage
+    exit 1
+fi
+
+RELEASE="$1"
+PROJECT="$2"
+
+# Build command
+CMD="xbs submissionInfo -release \"$RELEASE\" -project \"$PROJECT\" -format notes"
+
+if [ "$DRY_RUN" = true ]; then
+    echo "$CMD"
+else
+    eval "$CMD"
+fi

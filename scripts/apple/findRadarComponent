@@ -1,0 +1,297 @@
+#!/bin/sh
+# Find radar component for a file
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print usage
+print_usage() {
+    cat << EOF
+Usage: $(basename "$0") [<release>] <searchterm> [options]
+
+Find which radar component owns a file
+
+Arguments:
+  <release>     Release to search in (defaults to current system)
+  <searchterm>  File or path to search for
+
+Options:
+  -h, --help       Show this help message
+  --few            Early bail if there are lots of projects
+  --quiet          Only output radar component
+  --all            Show all resulting paths (verbose)
+  --unmodified     Do not modify the search term (no wildcards)
+  --fast           Skip radar component lookup
+  --sim            Include _Sim projects normally skipped
+  -s, --sdk        Check against SDK content
+  --dry            Show xbs command without executing
+
+Examples:
+  # Find which project owns powerlogd
+  $(basename "$0") powerlogd
+
+  # Find in a specific release
+  $(basename "$0") Golden powerlogd --quiet
+EOF
+}
+
+# Get this script's directory for calling projInfo
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Parse options
+DRY_RUN=false
+VERBOSE=false
+QUIET=false
+FEW=false
+SDK=false
+SIM=false
+UNMODIFIED=false
+FAST=false
+RELEASE=""
+SEARCH_TERM=""
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --dry)
+            DRY_RUN=true
+            shift
+            ;;
+        --all|--verbose)
+            VERBOSE=true
+            shift
+            ;;
+        --quiet)
+            QUIET=true
+            shift
+            ;;
+        --few)
+            FEW=true
+            shift
+            ;;
+        -s|--sdk)
+            SDK=true
+            shift
+            ;;
+        --sim)
+            SIM=true
+            shift
+            ;;
+        --unmodified)
+            UNMODIFIED=true
+            shift
+            ;;
+        --fast)
+            FAST=true
+            shift
+            ;;
+        *)
+            if [ -z "$RELEASE" ]; then
+                RELEASE="$1"
+            elif [ -z "$SEARCH_TERM" ]; then
+                SEARCH_TERM="$1"
+            else
+                printf "${RED}[ERROR]${NC} Unknown argument: $1\n"
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Handle 1 or 2 arg case
+if [ -z "$SEARCH_TERM" ]; then
+    SEARCH_TERM="$RELEASE"
+    RELEASE=$(xbs getTrainForBuild --quiet "$(sw_vers -buildVersion)")
+fi
+
+# Validate
+if [ -z "$SEARCH_TERM" ]; then
+    printf "${RED}[ERROR]${NC} Missing search term\n"
+    exit 1
+fi
+
+if [ -z "$RELEASE" ]; then
+    printf "${RED}[ERROR]${NC} Could not determine release\n"
+    exit 1
+fi
+
+# Print summary unless quiet
+if [ "$QUIET" = false ]; then
+    echo "-------------"
+    echo "Release: $RELEASE"
+    echo "Search Term: $SEARCH_TERM"
+    [ "$SDK" = true ] && echo "Searching SDKContent"
+    echo "-------------"
+fi
+
+# Determine UPDATE from RELEASE
+UPDATE="$RELEASE"
+case "$RELEASE" in
+    Prevailing|Current|Stashed|Newest|Built)
+        # Already an update name
+        ;;
+    *[0-9][A-Z][0-9]*)
+        # Contains build number, assume it's an update
+        ;;
+    *)
+        # Try Stashed first for speed
+        UPDATE="Stashed${RELEASE}"
+        ;;
+esac
+
+# Build search term
+if [ "$UNMODIFIED" = true ]; then
+    TERM="$SEARCH_TERM"
+else
+    TERM="*${SEARCH_TERM}*"
+fi
+
+# Build command
+CMD="xbsfind files -update \"$UPDATE\" --glob '$TERM'"
+[ "$VERBOSE" = false ] && CMD="$CMD --nolocs"
+[ "$SDK" = true ] && CMD="$CMD -sdk"
+
+if [ "$DRY_RUN" = true ]; then
+    echo "$CMD"
+    exit 0
+fi
+
+# Execute search
+OUTPUT=$(eval "$CMD" 2>/dev/null)
+
+if [ $? -ne 0 ]; then
+    # Try Prevailing if Stashed failed
+    case "$UPDATE" in
+        Stashed*)
+            UPDATE="Prevailing${RELEASE}"
+            CMD="xbsfind files -update \"$UPDATE\" --glob '$TERM'"
+            [ "$VERBOSE" = false ] && CMD="$CMD --nolocs"
+            [ "$SDK" = true ] && CMD="$CMD -sdk"
+            OUTPUT=$(eval "$CMD" 2>/dev/null)
+            if [ $? -ne 0 ]; then
+                printf "${RED}[ERROR]${NC} xbs commands failed. Logged into OpenDirectory?\n"
+                exit 2
+            fi
+            ;;
+        *)
+            printf "${RED}[ERROR]${NC} xbs commands failed. Logged into OpenDirectory?\n"
+            exit 2
+            ;;
+    esac
+fi
+
+# Parse output into projects
+PROJECTS=""
+CURRENT_PROJECT=""
+CURRENT_PATHS=""
+PATH_COUNT=0
+
+while IFS= read -r line; do
+    # Skip "Resolved search term" messages
+    echo "$line" | grep -q "Resolved search term" && continue
+
+    # New project line: "ProjectName [platform]"
+    if echo "$line" | grep -qE '^[^ \t]+ \[\w+\]$'; then
+        # Save previous project if exists
+        if [ -n "$CURRENT_PROJECT" ]; then
+            PROJECTS="${PROJECTS}${CURRENT_PROJECT}:${PATH_COUNT}:${CURRENT_PATHS}
+"
+        fi
+
+        # Start new project
+        CURRENT_PROJECT=$(echo "$line" | sed 's/ \[.*\]$//')
+        CURRENT_PATHS=""
+        PATH_COUNT=0
+    elif [ -n "$CURRENT_PROJECT" ]; then
+        # Path line starts with tab and ./
+        if echo "$line" | grep -qE '^\t\.'; then
+            PATH=$(echo "$line" | sed 's/^\t\.//')
+            PATH_COUNT=$((PATH_COUNT + 1))
+            if [ -z "$CURRENT_PATHS" ]; then
+                CURRENT_PATHS="$PATH"
+            else
+                CURRENT_PATHS="${CURRENT_PATHS}|${PATH}"
+            fi
+        fi
+    fi
+done << EOF
+$OUTPUT
+EOF
+
+# Save last project
+if [ -n "$CURRENT_PROJECT" ]; then
+    PROJECTS="${PROJECTS}${CURRENT_PROJECT}:${PATH_COUNT}:${CURRENT_PATHS}
+"
+fi
+
+# Filter out localization projects
+PROJECTS=$(echo "$PROJECTS" | grep -v "_Loc_")
+
+if [ -z "$PROJECTS" ]; then
+    printf "${RED}[ERROR]${NC} No results found\n"
+    exit 2
+fi
+
+# Check if too many projects
+PROJECT_COUNT=$(echo "$PROJECTS" | grep -v '^$' | wc -l | tr -d ' ')
+if [ "$FEW" = true ] && [ "$PROJECT_COUNT" -gt 5 ]; then
+    printf "${RED}[ERROR]${NC} Lots of projects with results. Use more specific term?\n"
+    echo "$PROJECTS" | while IFS=: read -r name count paths; do
+        [ -n "$name" ] && echo "  $name ($count files)"
+    done
+    exit 2
+fi
+
+# Process each project
+echo "$PROJECTS" | while IFS=: read -r name count paths; do
+    [ -z "$name" ] && continue
+
+    # Skip _Sim projects unless requested
+    if [ "$SIM" = false ]; then
+        case "$name" in
+            *_Sim) continue ;;
+        esac
+    fi
+
+    # Get radar component
+    RADAR=""
+    if [ "$FAST" = false ] && [ -x "$SCRIPT_DIR/projInfo" ]; then
+        RADAR=$("$SCRIPT_DIR/projInfo" "$UPDATE" "$name" --radar 2>/dev/null)
+    fi
+
+    if [ "$QUIET" = true ]; then
+        [ -n "$RADAR" ] && echo "$RADAR"
+        break
+    else
+        echo "PROJECT: $name"
+        [ "$FAST" = false ] && [ -n "$RADAR" ] && echo "RADAR: $RADAR"
+
+        # Show paths
+        first_path=$(echo "$paths" | cut -d'|' -f1)
+        echo "PATHS: $first_path"
+
+        if [ "$VERBOSE" = true ]; then
+            echo "$paths" | tr '|' '\n' | tail -n +2 | while read -r p; do
+                [ -n "$p" ] && echo "       $p"
+            done
+        else
+            remaining_paths=$(echo "$paths" | cut -d'|' -f2-4)
+            echo "$remaining_paths" | tr '|' '\n' | while read -r p; do
+                [ -n "$p" ] && echo "       $p"
+            done
+            if [ "$count" -gt 3 ]; then
+                echo "       ... $((count - 3)) more ..."
+            fi
+        fi
+        echo
+    fi
+done

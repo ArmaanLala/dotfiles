@@ -1,0 +1,86 @@
+#!/bin/sh
+# Get project version in an update/train
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print usage
+print_usage() {
+    cat << EOF
+Usage: $(basename "$0") <update> <project> [<project> ...]
+
+Get the version of projects in a specific update or train
+
+Arguments:
+  <update>    Golden, Azul18A238a, etc.
+  <project>   JavaScriptCore, MobileSafari, etc.
+
+Options:
+  -h, --help  Show this help message
+  --dry       Show xbsfind command without executing
+
+Examples:
+  # Get the version of a particular project in CurrentGolden
+  $(basename "$0") Golden JavaScriptCore
+
+  # Get the version of multiple projects in a particular build
+  $(basename "$0") Azul18A238a JavaScriptCore WebCore
+EOF
+}
+
+# Parse options
+DRY_RUN=false
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --dry)
+            DRY_RUN=true
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Check arguments
+if [ $# -lt 2 ]; then
+    print_usage
+    exit 1
+fi
+
+UPDATE="$1"
+shift
+
+# Resolve update name
+case "$UPDATE" in
+    *[0-9][A-Z][0-9]*)
+        # Already a full update name
+        ;;
+    Prevailing|Current|Stashed|Newest|Built)
+        # Already a special update name
+        ;;
+    *)
+        # Prepend "Current" to train names
+        UPDATE="Current${UPDATE}"
+        ;;
+esac
+
+# Get versions for each project
+for PROJECT in "$@"; do
+    CMD="xbsfind projectversions -retired -update $UPDATE $PROJECT | tail +3"
+
+    if [ "$DRY_RUN" = true ]; then
+        echo "$CMD"
+    else
+        eval "$CMD"
+    fi
+done

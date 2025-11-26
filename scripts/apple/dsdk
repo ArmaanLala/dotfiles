@@ -1,0 +1,248 @@
+#!/bin/sh
+# darwinup SDK content manager - install/manage SDK roots
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# SDK keyword mappings
+declare -A SDK_KEYWORDS=(
+    ["mac"]="macosx.internal"
+    ["macos"]="macosx.internal"
+    ["ios"]="iphoneos.internal"
+    ["tv"]="appletvos.internal"
+    ["tvos"]="appletvos.internal"
+    ["watch"]="watchos.internal"
+    ["watchos"]="watchos.internal"
+    ["xros"]="xros.internal"
+    ["visionos"]="xros.internal"
+    ["sim"]="iphonesimulator.internal"
+    ["host"]="ioshostadditions"
+)
+
+# Print usage
+print_usage() {
+    cat << EOF
+Usage: $(basename "$0") <sdk> [... darwinup commands]
+   or: $(basename "$0") listall
+
+darwinup SDK content manager for installing and managing SDK roots
+
+SDK values:
+  - SDK names from 'xcodebuild -showsdks': macosx.internal, iphoneos.internal, etc.
+  - Special targets:
+      xcode          - Install into Xcode developer dir
+      simruntime     - Install into Simulator runtime
+      defaulttoolchain, iostoolchain, osxtoolchain
+  - Shortcut keywords: mac, ios, tv, watch, xros, sim, host
+
+Options:
+  -h, --help  Show this help message
+  --dry       Output darwinup invocation without executing
+
+Examples:
+  # List macosx.internal roots
+  $(basename "$0") macosx.internal list
+
+  # List all roots installed via dsdk
+  $(basename "$0") listall
+
+  # Install SDK content into iphoneos.internal SDK
+  $(basename "$0") ios install /path/to/SDKContent
+
+  # Install content into Xcode
+  $(basename "$0") xcode install /path/to/SDKContent
+
+  # Install content into a simruntime
+  $(basename "$0") simruntime install /path/to/Sim/RuntimeRoot
+
+  # Install content into the iOS toolchain
+  $(basename "$0") iostoolchain install /path/to/Toolchain/RuntimeRoot
+EOF
+}
+
+# Find SDKContentRoot within a path
+find_sdkcontent_root() {
+    find "$1" -type d -name "SDKContentRoot" -path "*/_install/SDKContentRoot" 2>/dev/null | head -n 1
+}
+
+# Find toolchain path
+find_toolchain_path() {
+    key="$1"
+    toolchain_dir=$(xcode-select -p 2>/dev/null)/Toolchains
+
+    if [ ! -d "$toolchain_dir" ]; then
+        return 1
+    fi
+
+    case "$key" in
+        defaulttoolchain)
+            find "$toolchain_dir" -maxdepth 1 -name "XcodeDefault*.xctoolchain" 2>/dev/null | head -n 1
+            ;;
+        iostoolchain)
+            find "$toolchain_dir" -maxdepth 1 -name "iOS*.xctoolchain" 2>/dev/null | head -n 1
+            ;;
+        osxtoolchain)
+            find "$toolchain_dir" -maxdepth 1 -name "OSX*.xctoolchain" 2>/dev/null | head -n 1
+            ;;
+        *)
+            printf "${RED}[ERROR]${NC} Unexpected toolchain value: $key\n" >&2
+            printf "${YELLOW}[INFO]${NC} Supported: defaulttoolchain, iostoolchain, osxtoolchain\n" >&2
+            return 1
+            ;;
+    esac
+}
+
+# List with keyword
+list_with_keyword() {
+    dsdk_path="$1"
+    key="$2"
+
+    output=$("$dsdk_path" "$key" list 2>/dev/null)
+    if [ $? -eq 0 ] && [ "$(echo "$output" | wc -l)" -gt 3 ]; then
+        echo "[$key]"
+        "$dsdk_path" "$key" files all 2>/dev/null
+        echo
+        return 0
+    fi
+    return 1
+}
+
+# List all roots
+list_all() {
+    # Ensure sudo
+    sudo true
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
+    dsdk_path="$(realpath "$0")"
+    had_roots=false
+
+    for key in macosx.internal iphoneos.internal appletvos.internal watchos.internal \
+               iphonesimulator.internal ioshostadditions xcode simruntime \
+               defaulttoolchain osxtoolchain iostoolchain; do
+        if list_with_keyword "$dsdk_path" "$key"; then
+            had_roots=true
+        fi
+    done
+
+    if [ "$had_roots" = false ]; then
+        echo "No roots found."
+    fi
+}
+
+# Parse options
+DRY_RUN=false
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --dry)
+            DRY_RUN=true
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Check arguments
+if [ $# -eq 0 ]; then
+    print_usage
+    exit 0
+fi
+
+# Special case: listall
+if [ "$1" = "listall" ]; then
+    list_all
+    exit 0
+fi
+
+SDK="$1"
+shift
+
+# Default to "list" if no args
+if [ $# -eq 0 ]; then
+    set -- "list"
+fi
+
+# Expand SDK keywords
+for key in "${!SDK_KEYWORDS[@]}"; do
+    if [ "$SDK" = "$key" ]; then
+        new_sdk="${SDK_KEYWORDS[$key]}"
+        printf "${BLUE}[INFO]${NC} $SDK => $new_sdk\n"
+        SDK="$new_sdk"
+        break
+    fi
+done
+
+# Determine SDK path
+if [ "$DRY_RUN" = false ]; then
+    case "$SDK" in
+        xcode)
+            SDK_PATH=$(xcode-select -p 2>/dev/null)
+            ;;
+        simruntime)
+            runtime_path=$(xcrun simctl runtime info path ios 2>/dev/null)
+            SDK_PATH="${runtime_path}/Contents/Resources/RuntimeRoot"
+            ;;
+        *toolchain)
+            SDK_PATH=$(find_toolchain_path "$SDK")
+            ;;
+        *)
+            SDK_PATH=$(xcrun -sdk "$SDK" --show-sdk-path 2>/dev/null)
+            ;;
+    esac
+
+    if [ $? -ne 0 ] || [ -z "$SDK_PATH" ]; then
+        printf "${RED}[ERROR]${NC} No such SDK: $SDK\n"
+        xcodebuild -showsdks
+        exit 1
+    fi
+else
+    # Dry run paths
+    case "$SDK" in
+        xcode)
+            SDK_PATH='$(xcode-select -p)'
+            ;;
+        simruntime)
+            runtime_path=$(xcrun simctl runtime info path ios 2>/dev/null)
+            SDK_PATH="${runtime_path}/Contents/Resources/RuntimeRoot"
+            ;;
+        *toolchain)
+            SDK_PATH=$(find_toolchain_path "$SDK")
+            ;;
+        *)
+            SDK_PATH='$(xcrun -sdk '"$SDK"' --show-sdk-path)'
+            ;;
+    esac
+fi
+
+# Better detect SDKContentRoot from .roots path
+if [ $# -ge 2 ] && { [ "$1" = "install" ] || [ "$1" = "uninstall" ]; } && echo "$2" | grep -q '\.roots$'; then
+    sdkcontent_root=$(find_sdkcontent_root "$2")
+    if [ -n "$sdkcontent_root" ]; then
+        printf "${BLUE}[INFO]${NC} Expanded SDKContentRoot: $sdkcontent_root\n"
+        shift
+        set -- "install" "$sdkcontent_root" "${@:2}"
+    else
+        printf "${RED}[ERROR]${NC} Could not find SDKContentRoot\n"
+        exit 2
+    fi
+fi
+
+# Build and execute darwinup command
+if [ "$DRY_RUN" = true ]; then
+    echo "sudo darwinup -p $SDK_PATH $*"
+else
+    sudo darwinup -p "$SDK_PATH" "$@"
+fi

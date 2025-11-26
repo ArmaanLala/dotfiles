@@ -1,0 +1,138 @@
+#!/bin/sh
+# Diff cortex attributes between builds
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print usage
+print_usage() {
+    cat << EOF
+Usage: $(basename "$0") <update1> <update2> <project>
+   or: $(basename "$0") <update1> <project1> <update2> <project2> [options]
+
+Diff cortex attributes quickly between two builds
+
+Arguments:
+  <update>    Golden, Azul18A238a, etc.
+  <project>   JavaScriptCore, MobileSafari, etc.
+
+Options:
+  -h, --help  Show this help message
+  --dry       Show xbssnapshot commands without executing
+  --live      Live cortex
+
+Examples:
+  # Diff between two builds of the same project
+  $(basename "$0") Golden20A230 Golden20A231 JavaScriptCore
+
+  # Diff different project pairs
+  $(basename "$0") Golden JavaScriptCore Golden WebCore
+EOF
+}
+
+# Parse options
+DRY_RUN=false
+LIVE=false
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --dry)
+            DRY_RUN=true
+            shift
+            ;;
+        --live)
+            LIVE=true
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Check arguments
+if [ $# -ne 3 ] && [ $# -ne 4 ]; then
+    printf "${RED}[ERROR]${NC} Wrong number of arguments\n"
+    print_usage
+    exit 1
+fi
+
+# Parse arguments
+if [ $# -eq 3 ]; then
+    TRAINUPDATE1="$1"
+    TRAINUPDATE2="$2"
+    PROJECT1="$3"
+    PROJECT2="$3"
+else
+    TRAINUPDATE1="$1"
+    PROJECT1="$2"
+    TRAINUPDATE2="$3"
+    PROJECT2="$4"
+fi
+
+# Helper to build xbssnapshot command
+build_cmd() {
+    trainupdate="$1"
+    project="$2"
+
+    case "$trainupdate" in
+        *[0-9][A-Z][0-9]*|Prevailing|Current|Stashed|Newest|Built)
+            cmd="xbssnapshot dump --update \"$trainupdate\" --project \"$project\" --pretty"
+            ;;
+        *)
+            cmd="xbssnapshot dump --release \"$trainupdate\" --project \"$project\" --pretty"
+            ;;
+    esac
+
+    [ "$LIVE" = true ] && cmd="$cmd --live"
+
+    echo "$cmd"
+}
+
+# Print summary
+echo "-------------------------"
+echo "Update 1:  $TRAINUPDATE1"
+echo "Project 1: $PROJECT1"
+echo "Update 2:  $TRAINUPDATE2"
+echo "Project 2: $PROJECT2"
+echo "-------------------------"
+
+# Get cortex output
+CMD1=$(build_cmd "$TRAINUPDATE1" "$PROJECT1")
+CMD2=$(build_cmd "$TRAINUPDATE2" "$PROJECT2")
+
+echo "$CMD1"
+echo "$CMD2"
+echo "-------------------------"
+
+if [ "$DRY_RUN" = true ]; then
+    exit 0
+fi
+
+# Fetch data
+CORTEX1=$(eval "$CMD1")
+CORTEX2=$(eval "$CMD2")
+
+# Create temp files
+TEMP1=$(mktemp "/tmp/${TRAINUPDATE1}-XXXXXX.txt")
+TEMP2=$(mktemp "/tmp/${TRAINUPDATE2}-XXXXXX.txt")
+
+echo "$CORTEX1" > "$TEMP1"
+echo "$CORTEX2" > "$TEMP2"
+
+# Diff
+CMD="git diff --no-index \"$TEMP1\" \"$TEMP2\""
+echo "$CMD"
+eval "$CMD" || true  # git diff returns non-zero when there are differences
+
+# Cleanup
+rm -f "$TEMP1" "$TEMP2"

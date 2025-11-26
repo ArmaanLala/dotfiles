@@ -1,0 +1,62 @@
+#!/bin/bash
+set -euo pipefail
+
+# Extract and decode virtualization breadcrumbs from system logs
+
+usage() {
+    cat << EOF
+Usage: $(basename "$0")
+
+Extract and decode breadcrumb logs from com.apple.virtualization
+
+EOF
+}
+
+main() {
+    # Parse arguments
+    if [[ "${1:-}" =~ ^(-h|--help)$ ]]; then
+        usage
+        exit 0
+    fi
+
+    # Find log archive
+    local log_path
+    log_path=$(fd system_logs.logarchive 2>/dev/null | head -n 1)
+    if [[ -z "$log_path" ]]; then
+        echo "Error: Could not find system_logs.logarchive" >&2
+        exit 1
+    fi
+
+    # Extract unique breadcrumb values
+    local breadcrumbs
+    breadcrumbs=$(log show "$log_path" --last boot \
+        --predicate 's=com.apple.virtualization AND c=breadcrumb' 2>/dev/null \
+        | grep -oE '\[com\.apple\.virtualization:breadcrumb\] 0x[0-9a-fA-F]+' \
+        | grep -oE '0x[0-9a-fA-F]+' \
+        | sort -u)
+
+    if [[ -z "$breadcrumbs" ]]; then
+        echo "No breadcrumbs found"
+        exit 0
+    fi
+
+    # Display found breadcrumbs
+    echo "Found breadcrumbs:"
+    echo "$breadcrumbs" | sed 's/^/  /'
+    echo
+
+    # Decode each breadcrumb
+    local decode_script="$HOME/virtualization/Scripts/decode-breadcrumbs.py"
+    if [[ ! -f "$decode_script" ]]; then
+        echo "Error: Decode script not found: $decode_script" >&2
+        exit 1
+    fi
+
+    while IFS= read -r crumb; do
+        echo "=== $crumb ==="
+        "$decode_script" "$crumb"
+        echo
+    done <<< "$breadcrumbs"
+}
+
+main "$@"

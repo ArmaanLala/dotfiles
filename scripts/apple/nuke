@@ -1,0 +1,29 @@
+#!/bin/bash
+# Deletes Xcode's DerivedData folder to clear build caches
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+DERIVED_DATA_PATH="$HOME/Library/Developer/Xcode/DerivedData"
+
+echo -e "${BLUE}[INFO]${NC} Checking DerivedData folder..."
+
+if [ ! -d "$DERIVED_DATA_PATH" ]; then
+  echo -e "${YELLOW}[WARNING]${NC} DerivedData folder does not exist."
+  exit 0
+fi
+
+echo -e "${BLUE}[INFO]${NC} Deleting DerivedData folder..."
+sudo rm -rf "$DERIVED_DATA_PATH"
+if [ $? -eq 0 ]; then
+  echo -e "${GREEN}[SUCCESS]${NC} Successfully deleted DerivedData folder."
+else
+  echo -e "${RED}[ERROR]${NC} Failed to delete DerivedData folder."
+  exit 1
+fi
+
