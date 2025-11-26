@@ -1,0 +1,170 @@
+#!/bin/sh
+# Get base project and build aliases
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print usage
+print_usage() {
+    cat << EOF
+Usage: $(basename "$0") <update> <project> [options]
+
+Get base project and build aliases from XBS
+
+Arguments:
+  <update>    Golden, Azul18A238a, etc.
+  <project>   JavaScriptCore, MobileSafari, etc.
+
+Options:
+  -h, --help        Show this help message
+  -s, --simple      Just dump the list of all projects
+  --live            Run on a live xbs
+  --dry             Show xbssnapshot command without executing
+
+Examples:
+  # Dump base project and aliases from a base project
+  $(basename "$0") Golden JavaScriptCore
+
+  # Dump base project and aliases from a build alias
+  $(basename "$0") Azul JavaScriptCore_Sim
+EOF
+}
+
+# Parse options
+DRY_RUN=false
+SIMPLE=false
+LIVE=false
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --dry)
+            DRY_RUN=true
+            shift
+            ;;
+        -s|--simple|--list)
+            SIMPLE=true
+            shift
+            ;;
+        --live)
+            LIVE=true
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Check arguments
+if [ $# -ne 2 ]; then
+    print_usage
+    exit 1
+fi
+
+TRAIN_UPDATE="$1"
+PROJECT="$2"
+
+# Build command
+case "$TRAIN_UPDATE" in
+    *[0-9][A-Z][0-9]*|Prevailing|Current|Stashed|Newest|Built)
+        CMD="xbssnapshot dump --update \"$TRAIN_UPDATE\" --project \"$PROJECT\" --json --siblings"
+        ;;
+    *)
+        CMD="xbssnapshot dump --release \"$TRAIN_UPDATE\" --project \"$PROJECT\" --json --siblings"
+        ;;
+esac
+
+[ "$LIVE" = true ] && CMD="$CMD --live"
+
+# Execute command
+if [ "$DRY_RUN" = true ]; then
+    echo "$CMD"
+    exit 0
+fi
+
+JSON=$(eval "$CMD")
+
+# Parse JSON
+if command -v jq >/dev/null 2>&1; then
+    # Use jq
+    BASE_PROJECT=$(echo "$JSON" | jq -r '.projects | to_entries[] | select(.value.isEnabled == true and (.value.buildAliasOf | not)) | .key' 2>/dev/null)
+    ALIAS_PROJECTS=$(echo "$JSON" | jq -r '.projects | to_entries[] | select(.value.isEnabled == true and .value.buildAliasOf) | .key' 2>/dev/null | sort)
+else
+    # Fallback to python
+    BASE_PROJECT=$(echo "$JSON" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for key, value in data['projects'].items():
+    if value.get('isEnabled') and not value.get('buildAliasOf'):
+        print(key)
+        break
+" 2>/dev/null)
+    ALIAS_PROJECTS=$(echo "$JSON" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+aliases = []
+for key, value in data['projects'].items():
+    if value.get('isEnabled') and value.get('buildAliasOf'):
+        aliases.append(key)
+for alias in sorted(aliases):
+    print(alias)
+" 2>/dev/null)
+fi
+
+# Check if we found anything
+if [ -z "$BASE_PROJECT" ] && [ -z "$ALIAS_PROJECTS" ]; then
+    printf "${RED}[ERROR]${NC} Did not find project siblings for: $PROJECT\n"
+    exit 1
+fi
+
+# Output
+if [ "$SIMPLE" = true ]; then
+    # Simple list format
+    [ -n "$BASE_PROJECT" ] && echo -n "$BASE_PROJECT "
+    echo "$ALIAS_PROJECTS" | tr '\n' ' '
+    echo
+else
+    # Full format with headers
+    echo "-------------------------"
+    echo "Update:  $TRAIN_UPDATE"
+    echo "Project: $PROJECT"
+    echo "-------------------------"
+
+    if [ -n "$BASE_PROJECT" ]; then
+        if [ "$BASE_PROJECT" = "$PROJECT" ]; then
+            echo "Base:    $BASE_PROJECT (*)"
+        else
+            echo "Base:    $BASE_PROJECT"
+        fi
+    fi
+
+    if [ -n "$ALIAS_PROJECTS" ]; then
+        first=true
+        echo "$ALIAS_PROJECTS" | while read -r alias; do
+            [ -z "$alias" ] && continue
+            if [ "$first" = true ]; then
+                if [ "$alias" = "$PROJECT" ]; then
+                    echo "Aliases: $alias (*)"
+                else
+                    echo "Aliases: $alias"
+                fi
+                first=false
+            else
+                if [ "$alias" = "$PROJECT" ]; then
+                    echo "         $alias (*)"
+                else
+                    echo "         $alias"
+                fi
+            fi
+        done
+    fi
+fi

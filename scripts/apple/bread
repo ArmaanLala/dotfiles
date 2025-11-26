@@ -1,0 +1,92 @@
+#!/bin/bash
+# Decode breadcrumb logs from com.apple.virtualization
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print usage
+print_usage() {
+    cat << EOF
+Usage: $(basename "$0") [options]
+
+Extract and decode breadcrumb logs from com.apple.virtualization
+
+Options:
+  -h, --help  Show this help message
+
+Examples:
+  # Decode breadcrumb logs
+  $(basename "$0")
+EOF
+}
+
+# Parse options
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}[ERROR]${NC} Unknown option: $1"
+            print_usage
+            exit 1
+            ;;
+    esac
+done
+
+# Get crumb output
+echo -e "${BLUE}[INFO]${NC} Running crumb to get breadcrumb logs..."
+CRUMB_OUTPUT=$(crumb)
+
+# Extract hex values from breadcrumb lines
+BREADCRUMBS=$(echo "$CRUMB_OUTPUT" | grep -oE '\[com\.apple\.virtualization:breadcrumb\] (0x[0-9a-fA-F]+)' | grep -oE '0x[0-9a-fA-F]+' | sort -u)
+
+if [ -z "$BREADCRUMBS" ]; then
+    echo -e "${YELLOW}[WARNING]${NC} No breadcrumbs found in logs"
+    exit 0
+fi
+
+# Count breadcrumbs
+BREADCRUMB_COUNT=$(echo "$BREADCRUMBS" | wc -l | tr -d ' ')
+echo -e "${GREEN}[SUCCESS]${NC} Found $BREADCRUMB_COUNT unique breadcrumb(s):"
+while IFS= read -r crumb; do
+    echo -e "  ${CYAN}$crumb${NC}"
+done <<< "$BREADCRUMBS"
+echo
+
+# Change to virtualization directory
+VIRT_DIR="$HOME/virtualization"
+if [ ! -d "$VIRT_DIR" ]; then
+    echo -e "${RED}[ERROR]${NC} Virtualization directory not found: $VIRT_DIR"
+    exit 1
+fi
+
+cd "$VIRT_DIR" || exit 1
+echo -e "${BLUE}[INFO]${NC} Changed to directory: $VIRT_DIR"
+
+# Check if decode script exists
+DECODE_SCRIPT="./Scripts/decode-breadcrumbs.py"
+if [ ! -f "$DECODE_SCRIPT" ]; then
+    echo -e "${RED}[ERROR]${NC} Decode script not found: $DECODE_SCRIPT"
+    exit 1
+fi
+
+# Decode each breadcrumb
+echo -e "${BLUE}[INFO]${NC} Decoding breadcrumbs..."
+echo
+
+INDEX=1
+for CRUMB in $BREADCRUMBS; do
+    echo -e "${CYAN}=== Breadcrumb $INDEX/$BREADCRUMB_COUNT: $CRUMB ===${NC}"
+    "$DECODE_SCRIPT" "$CRUMB"
+    echo
+    ((INDEX++))
+done
+
+echo -e "${GREEN}[SUCCESS]${NC} Decoded $BREADCRUMB_COUNT breadcrumb(s)"

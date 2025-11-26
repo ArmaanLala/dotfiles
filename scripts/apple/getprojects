@@ -1,0 +1,107 @@
+#!/bin/sh
+# List all projects in a train/update
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print usage
+print_usage() {
+    cat << EOF
+Usage: $(basename "$0") <update> [options]
+
+List all projects in a specific update or train
+
+Arguments:
+  <update>    Golden, Azul18A238a, etc.
+
+Options:
+  -h, --help       Show this help message
+  -v, --versions   Include versions
+  -a, --aliases    Include build aliases
+  --dry            Show xbsfind command without executing
+
+Examples:
+  # Get projects in CurrentGolden
+  $(basename "$0") Golden
+
+  # Get project versions including aliases in a specific build
+  $(basename "$0") Azul18A260 --versions --aliases
+EOF
+}
+
+# Parse options
+DRY_RUN=false
+VERSIONS=false
+ALIASES=false
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --dry)
+            DRY_RUN=true
+            shift
+            ;;
+        -v|--versions)
+            VERSIONS=true
+            shift
+            ;;
+        -a|--aliases)
+            ALIASES=true
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Check arguments
+if [ $# -ne 1 ]; then
+    print_usage
+    exit 1
+fi
+
+UPDATE="$1"
+
+# Resolve update name
+case "$UPDATE" in
+    *[0-9][A-Z][0-9]*)
+        # Already a full update name
+        ;;
+    Prevailing|Current|Stashed|Newest|Built)
+        # Already a special update name
+        ;;
+    *)
+        # Prepend "Current" to train names
+        UPDATE="Current${UPDATE}"
+        ;;
+esac
+
+# Build command
+CMD="xbsfind projectversions -retired -update \"$UPDATE\" --nolocs"
+
+if [ "$ALIASES" = true ]; then
+    CMD="$CMD --aliases"
+else
+    CMD="$CMD --noaliases"
+fi
+
+CMD="$CMD | tail +3"
+
+if [ "$VERSIONS" = false ]; then
+    CMD="$CMD | egrep -o '^[^\-]+|\-{10,}'"
+fi
+
+if [ "$DRY_RUN" = true ]; then
+    echo "$CMD"
+else
+    eval "$CMD"
+fi

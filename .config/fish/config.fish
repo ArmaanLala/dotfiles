@@ -35,3 +35,11 @@ alias la="eza --color=auto --icons -lah"
 batman --export-env | source
 zoxide init fish | source
 starship init fish | source
+
+# uv
+fish_add_path "/Users/armaanlala/.local/bin"
+
+# Added by LM Studio CLI (lms)
+set -gx PATH $PATH /Users/armaanlala/.lmstudio/bin
+# End of LM Studio CLI section
+

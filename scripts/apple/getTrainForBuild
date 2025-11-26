@@ -1,0 +1,42 @@
+#!/bin/sh
+# Get train name from build version using XBS
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print usage
+print_usage() {
+    echo "Usage: $(basename "$0") <build-version>"
+    echo
+    echo "Get the train name for a given build version"
+    echo
+    echo "Examples:"
+    echo "  $(basename "$0") 24A5264n"
+    echo "  $(basename "$0") \$(sw_vers -buildVersion)"
+}
+
+# Check arguments
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    print_usage
+    exit 0
+fi
+
+# If no arguments, use local build version
+if [ $# -eq 0 ]; then
+    BUILD_VERSION=$(sw_vers -buildVersion)
+    if [ -z "$BUILD_VERSION" ]; then
+        echo "${RED}[ERROR]${NC} Failed to get local build version" >&2
+        exit 1
+    fi
+    # Run xbs getTrainForBuild with local build version
+    xbs getTrainForBuild "$BUILD_VERSION"
+else
+    BUILD_VERSION="$1"
+    # Run xbs getTrainForBuild with provided arguments
+    xbs getTrainForBuild "$@"
+fi

@@ -1,0 +1,213 @@
+#!/bin/sh
+# Get project information from XBS/Cortex
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print usage
+print_usage() {
+    cat << EOF
+Usage: $(basename "$0") [<release>] <project> [options]
+
+Get project information from XBS/Cortex including radar, owners, and repository
+
+Arguments:
+  <release>   Lobo, Innsbruck, etc. (defaults to current system)
+  <project>   JavaScriptCore, MobileSafari, etc.
+
+Options:
+  -h, --help    Show this help message
+  --radar       Output only radar component
+  --repo        Output only repository URL
+  --owners      Output only owners
+  --link        Output only projectinfo URL
+  --open        Open projectinfo link in browser
+  --dry         Show xbssnapshot command without executing
+  --raw         Dump raw JSON from xbssnapshot
+
+Examples:
+  # Project info for MobileSafari in Innsbruck
+  $(basename "$0") Innsbruck MobileSafari
+
+  # Project info for JavaScriptCore in current system
+  $(basename "$0") JavaScriptCore
+
+  # Open XBS Project Info page for JavaScriptCore in Peace
+  $(basename "$0") Peace JavaScriptCore --open
+
+  # Get radar component for WebInspector in current system
+  $(basename "$0") WebInspector --radar
+EOF
+}
+
+# Parse options
+DRY_RUN=false
+RAW=false
+OPEN=false
+ONLY_MODE=""
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --dry)
+            DRY_RUN=true
+            shift
+            ;;
+        --raw)
+            RAW=true
+            shift
+            ;;
+        --open)
+            OPEN=true
+            shift
+            ;;
+        --radar)
+            ONLY_MODE="radar"
+            shift
+            ;;
+        --repo)
+            ONLY_MODE="repo"
+            shift
+            ;;
+        --owners)
+            ONLY_MODE="owners"
+            shift
+            ;;
+        --link)
+            ONLY_MODE="link"
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Check arguments
+if [ $# -eq 0 ]; then
+    print_usage
+    exit 1
+fi
+
+if [ $# -gt 2 ]; then
+    printf "${RED}[ERROR]${NC} Wrong number of arguments\n"
+    exit 1
+fi
+
+# Parse release and project
+if [ $# -eq 1 ]; then
+    RELEASE=$(xbs getTrainForBuild --quiet "$(sw_vers -buildVersion)")
+    PROJECT="$1"
+else
+    RELEASE="$1"
+    PROJECT="$2"
+fi
+
+# Build command
+case "$RELEASE" in
+    *[0-9][A-Z][0-9]*|Prevailing|Current|Stashed|Newest|Built)
+        CMD="xbssnapshot dump --update \"$RELEASE\" --project \"$PROJECT\" --json --siblings"
+        ;;
+    *)
+        CMD="xbssnapshot dump --release \"$RELEASE\" --project \"$PROJECT\" --json --siblings"
+        ;;
+esac
+
+# Execute command
+if [ "$DRY_RUN" = true ]; then
+    echo "$CMD"
+    exit 0
+fi
+
+JSON=$(eval "$CMD")
+
+if [ "$RAW" = true ]; then
+    echo "$JSON"
+    exit 0
+fi
+
+# Parse JSON using jq or python
+if command -v jq >/dev/null 2>&1; then
+    # Parse with jq
+    RADAR=$(echo "$JSON" | jq -r ".projects[\"$PROJECT\"].radarComponents[]? // empty" 2>/dev/null | tr '\n' ' ' | sed 's/ $//')
+    REPO=$(echo "$JSON" | jq -r ".projects[\"$PROJECT\"].sourceRepositoryURL // empty" 2>/dev/null)
+    PRIMARY_OWNER=$(echo "$JSON" | jq -r ".projects[\"$PROJECT\"].primaryOwner // empty" 2>/dev/null)
+    SECONDARY_OWNERS=$(echo "$JSON" | jq -r ".projects[\"$PROJECT\"].secondaryOwners[]? // empty" 2>/dev/null | tr '\n' ' ' | sed 's/ $//')
+    PLATFORM=$(echo "$JSON" | jq -r ".projects[\"$PROJECT\"].providesContentForPlatform // \"macos\"" 2>/dev/null)
+    BUILD_ALIAS_OF=$(echo "$JSON" | jq -r ".projects[\"$PROJECT\"].buildAliasOf // empty" 2>/dev/null)
+else
+    # Fallback to python
+    RADAR=$(echo "$JSON" | python3 -c "import sys, json; data=json.load(sys.stdin); print(' '.join(data['projects']['$PROJECT'].get('radarComponents', [])))" 2>/dev/null)
+    REPO=$(echo "$JSON" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data['projects']['$PROJECT'].get('sourceRepositoryURL', ''))" 2>/dev/null)
+    PRIMARY_OWNER=$(echo "$JSON" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data['projects']['$PROJECT'].get('primaryOwner', ''))" 2>/dev/null)
+    SECONDARY_OWNERS=$(echo "$JSON" | python3 -c "import sys, json; data=json.load(sys.stdin); print(' '.join(data['projects']['$PROJECT'].get('secondaryOwners', [])))" 2>/dev/null)
+    PLATFORM=$(echo "$JSON" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data['projects']['$PROJECT'].get('providesContentForPlatform', 'macos'))" 2>/dev/null)
+    BUILD_ALIAS_OF=$(echo "$JSON" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data['projects']['$PROJECT'].get('buildAliasOf', ''))" 2>/dev/null)
+fi
+
+# Combine owners
+OWNERS="$PRIMARY_OWNER"
+if [ -n "$SECONDARY_OWNERS" ]; then
+    if [ -n "$OWNERS" ]; then
+        OWNERS="$OWNERS, $SECONDARY_OWNERS"
+    else
+        OWNERS="$SECONDARY_OWNERS"
+    fi
+fi
+
+# Generate link
+if [ "$PLATFORM" = "ios" ]; then
+    LINK="https://projectinfo.apple.com/hosts/cortex-ios.sd.apple.com/projects/$PROJECT"
+else
+    LINK="https://projectinfo.apple.com/hosts/cortex.apple.com/projects/$PROJECT"
+fi
+
+# Output based on mode
+if [ -n "$ONLY_MODE" ]; then
+    case "$ONLY_MODE" in
+        radar)
+            [ -n "$RADAR" ] && echo "$RADAR"
+            ;;
+        repo)
+            [ -n "$REPO" ] && echo "$REPO"
+            ;;
+        owners)
+            [ -n "$OWNERS" ] && echo "$OWNERS"
+            ;;
+        link)
+            echo "$LINK"
+            ;;
+    esac
+else
+    # Full output
+    echo "-------------------------"
+    case "$RELEASE" in
+        *[0-9][A-Z][0-9]*)
+            echo "Update: $RELEASE"
+            ;;
+        *)
+            echo "Release: $RELEASE"
+            ;;
+    esac
+    echo "Project: $PROJECT"
+    echo "-------------------------"
+    [ -n "$RADAR" ] && echo "Radar: $RADAR"
+    [ -n "$OWNERS" ] && echo "Owners: $OWNERS"
+    [ -n "$REPO" ] && echo "Repository: $REPO"
+    echo "XBS Link: $LINK"
+    [ -n "$BUILD_ALIAS_OF" ] && echo "Build Alias Of: $BUILD_ALIAS_OF"
+    echo "-------------------------"
+fi
+
+# Open link if requested
+if [ "$OPEN" = true ]; then
+    open "$LINK"
+fi

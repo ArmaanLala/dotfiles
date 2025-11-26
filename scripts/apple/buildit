@@ -1,0 +1,282 @@
+#!/bin/sh
+# Enhanced xbs buildit wrapper with smart arch detection and useful flags
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
+# Print usage
+print_usage() {
+    cat << EOF
+Usage: $(basename "$0") <release> <project> [<arch>] [options]
+
+Enhanced wrapper around xbs buildit with smart defaults and arch detection
+
+Arguments:
+  <release>   Lobo, Peace, etc.
+  <project>   JavaScriptCore, MobileSafari, etc.
+  <arch>      arm64, x86_64, etc. (optional, can be auto-detected)
+
+Options:
+  -h, --help         Show this help message
+  --clean            Cause a clean build (no -noclean)
+  --aliases          Build all aliases (no -nobuildAllAliases)
+  --asan             Build with ASAN (-useAddressSanitization)
+  --sign             Codesign (-codesign)
+  --live             Live Cortex (-livecortex)
+  --hdrs             Allow installhdrs (skip -noinstallhdrs)
+  --api              Allow installapi (skip -noinstallapi)
+  --phases           Include install* phases (hdrs + api)
+  --verify           Include verification phases
+  --tests            Run tests (-buildUnitTests)
+  --dry              Output buildit invocation without executing
+  --simple           Simplify, no archive
+  --bestarch         Determine the best arch automatically
+  -b, --br           BuildRecord (implies --clean --simple)
+
+Examples:
+  # Build IMCore for Peace (all archs)
+  $(basename "$0") Peace IMCore
+
+  # Build i386 JavaScriptCore for Lobo
+  $(basename "$0") Lobo JavaScriptCore i386
+
+  # Build with auto arch detection
+  $(basename "$0") Peace JavaScriptCore --bestarch
+EOF
+}
+
+# Helper functions
+is_update() {
+    case "$1" in
+        *[0-9][A-Z][0-9]*|Prevailing|Current|Stashed|Newest|Built)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+assume_arch_based_on_release() {
+    case "$1" in
+        macOS*|Lobo*)
+            echo "x86_64"
+            ;;
+        Tigris*|Peace*|Yukon*)
+            echo "arm64"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+}
+
+best_arch_from_list() {
+    archs="$1"
+    if echo "$archs" | grep -q "arm64"; then
+        echo "arm64"
+    elif echo "$archs" | grep -q "x86_64"; then
+        echo "x86_64"
+    else
+        printf "${YELLOW}[WARNING]${NC} Unexpected supported archs: $archs\n" >&2
+        echo ""
+    fi
+}
+
+determine_best_arch() {
+    release="$1"
+    project="$2"
+
+    # Try to avoid expensive XBS with built-in names
+    assumed=$(assume_arch_based_on_release "$release")
+    if [ -n "$assumed" ]; then
+        echo "$assumed"
+        return 0
+    fi
+
+    # Query XBS for supported architectures
+    if is_update "$release"; then
+        json=$(xbssnapshot dump --update "$release" --project "$project" --json --lpa targetArchitectures 2>/dev/null)
+    else
+        json=$(xbssnapshot dump --release "$release" --project "$project" --json --lpa targetArchitectures 2>/dev/null)
+    fi
+
+    if [ -z "$json" ]; then
+        printf "${RED}[ERROR]${NC} Failed to query XBS for architectures\n" >&2
+        return 1
+    fi
+
+    # Parse JSON
+    if command -v jq >/dev/null 2>&1; then
+        archs=$(echo "$json" | jq -r ".projects[\"$project\"].targetArchitectures[]? // empty" 2>/dev/null | tr '\n' ' ')
+    else
+        archs=$(echo "$json" | python3 -c "import sys, json; data=json.load(sys.stdin); print(' '.join(data['projects']['$project'].get('targetArchitectures', [])))" 2>/dev/null)
+    fi
+
+    if [ -z "$archs" ]; then
+        printf "${RED}[ERROR]${NC} Could not determine supported archs\n" >&2
+        return 1
+    fi
+
+    best_arch_from_list "$archs"
+}
+
+# Parse options
+CLEAN=false
+ALIASES=false
+ASAN=false
+SIGN=false
+LIVE=false
+HDRS=false
+API=false
+VERIFY=false
+TESTS=false
+DRY_RUN=false
+SIMPLE=false
+DETERMINE_ARCH=false
+ARCH=""
+RELEASE=""
+PROJECT=""
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --clean)
+            CLEAN=true
+            shift
+            ;;
+        --aliases)
+            ALIASES=true
+            shift
+            ;;
+        --asan)
+            ASAN=true
+            shift
+            ;;
+        --sign)
+            SIGN=true
+            shift
+            ;;
+        --live)
+            LIVE=true
+            shift
+            ;;
+        --hdrs)
+            HDRS=true
+            shift
+            ;;
+        --api)
+            API=true
+            shift
+            ;;
+        --phases)
+            HDRS=true
+            API=true
+            shift
+            ;;
+        --verify)
+            VERIFY=true
+            shift
+            ;;
+        --tests)
+            TESTS=true
+            shift
+            ;;
+        --dry)
+            DRY_RUN=true
+            shift
+            ;;
+        --simple)
+            SIMPLE=true
+            shift
+            ;;
+        --bestarch)
+            DETERMINE_ARCH=true
+            shift
+            ;;
+        -b|--br|--buildrecord)
+            CLEAN=true
+            SIMPLE=true
+            shift
+            ;;
+        *)
+            if [ -z "$RELEASE" ]; then
+                RELEASE="$1"
+            elif [ -z "$PROJECT" ]; then
+                PROJECT="$1"
+            elif [ -z "$ARCH" ]; then
+                ARCH="$1"
+            else
+                printf "${RED}[ERROR]${NC} Unknown argument: $1\n"
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Validate arguments
+if [ -z "$RELEASE" ] || [ -z "$PROJECT" ]; then
+    print_usage
+    exit 1
+fi
+
+# Determine architecture if requested
+if [ -z "$ARCH" ] && [ "$DETERMINE_ARCH" = true ]; then
+    printf "${BLUE}[INFO]${NC} Determining best architecture...\r"
+    ARCH=$(determine_best_arch "$RELEASE" "$PROJECT")
+    if [ $? -ne 0 ] || [ -z "$ARCH" ]; then
+        printf "${RED}[ERROR]${NC} Failed to determine architecture\n"
+        printf "${YELLOW}[WARNING]${NC} Specify arch manually or use --bestarch\n"
+        exit 1
+    fi
+    printf "\033[K"  # Clear line
+fi
+
+# Print summary
+echo "-------------------------"
+if is_update "$RELEASE"; then
+    echo "Update: $RELEASE"
+else
+    echo "Release: $RELEASE"
+fi
+echo "Project: $PROJECT"
+[ -n "$ARCH" ] && echo "Arch: $ARCH"
+echo "-------------------------"
+
+# Build flags
+FLAGS=""
+[ "$VERIFY" = false ] && FLAGS="$FLAGS -noverify"
+FLAGS="$FLAGS -noinstallsrc"
+[ "$HDRS" = false ] && FLAGS="$FLAGS -noinstallhdrs"
+[ "$API" = false ] && FLAGS="$FLAGS -noinstallapi"
+[ "$VERIFY" = false ] && FLAGS="$FLAGS -nocheckfordestructivechanges"
+[ "$ALIASES" = false ] && FLAGS="$FLAGS -nobuildAllAliases"
+[ "$CLEAN" = false ] && FLAGS="$FLAGS -noclean"
+[ "$ASAN" = true ] && FLAGS="$FLAGS -useAddressSanitization"
+[ "$TESTS" = true ] && FLAGS="$FLAGS -buildUnitTests"
+[ "$SIGN" = true ] && FLAGS="$FLAGS -codesign"
+[ "$LIVE" = true ] && FLAGS="$FLAGS -livecortex"
+[ -n "$ARCH" ] && FLAGS="$FLAGS -arch $ARCH"
+[ "$SIMPLE" = false ] && FLAGS="$FLAGS -archive"
+
+# Build command
+if is_update "$RELEASE"; then
+    CMD="sudo xbs buildit -update $RELEASE -project $PROJECT$FLAGS ."
+else
+    CMD="sudo xbs buildit -release $RELEASE -project $PROJECT$FLAGS ."
+fi
+
+echo "$CMD"
+if [ "$DRY_RUN" = false ]; then
+    eval "$CMD"
+fi
+echo "-------------------------"
