@@ -183,7 +183,6 @@
     flake = "/etc/nixos"; # sets NH_OS_FLAKE variable for you
   };
 
-
   # Essential system packages
   environment.systemPackages = with pkgs; [
     vim # for emergencies when nvim isn't available
@@ -194,7 +193,7 @@
     lsof # list open files
     strace # system call tracing
 
-  nh
+    nh
   ];
 
   # Enable mDNS for hostname.local addresses
