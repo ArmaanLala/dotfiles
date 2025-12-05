@@ -1,0 +1,14 @@
+./.config/zsh/.zcompdump
+
+# Local secrets (SSH keys)
+secrets/
+home/.ssh/id_*
+home/.ssh/*.key
+home/.ssh/known_hosts
+
+# Stow conflicts
+.stow-*
+
+# Apple internal scripts and network topology
+home/scripts/apple/
+home/scripts/hosts.txt
