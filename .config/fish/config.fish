@@ -13,6 +13,7 @@ set -gx LESSHISTFILE "$XDG_CACHE_HOME/less_history"
 set -gx PYTHON_HISTORY "$XDG_DATA_HOME/python/history"
 
 fish_add_path "$HOME/scripts"
+fish_add_path "$HOME/scripts/apple"
 fish_add_path "$HOME/.local/bin"
 
 #TODO if macos set $home/scripts/apple
