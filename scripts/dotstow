@@ -11,6 +11,18 @@ echo "Pulling latest dotfiles..."
 cd "$DOTFILES" || exit 1
 git pull || { echo "Error: Failed to pull latest changes"; exit 1; }
 
+# Clean up old submodule references from restructuring
+if [ -d ".git/modules/home" ]; then
+    echo "Cleaning up old git submodule references..."
+    rm -rf .git/modules/home
+fi
+
+# Remove old home/ directory if it exists (from pre-restructure state)
+if [ -d "home" ]; then
+    echo "Removing old home/ directory from pre-restructure..."
+    rm -rf home
+fi
+
 # Update submodules
 echo "Updating submodules..."
 git submodule sync --recursive
@@ -29,12 +41,16 @@ echo "Stowing dotfiles to \$HOME..."
 stow -v --adopt -d "$DOTFILES" -t "$HOME" .
 
 # Symlink NixOS configs to /etc/nixos (requires sudo)
-printf "Symlink .config/nixos to /etc/nixos? (requires sudo) [y/N]: "
-read -r answer
-if [ "$answer" = "y" ]; then
-    [ -e /etc/nixos ] && sudo mv /etc/nixos "/etc/nixos.backup-$(date +%Y%m%d-%H%M%S)"
-    sudo ln -s "$HOME/.config/nixos" /etc/nixos
-    echo "Linked /etc/nixos -> $HOME/.config/nixos"
+if [ -d "$HOME/.config/nixos/.git" ] || [ -f "$HOME/.config/nixos/flake.nix" ]; then
+    printf "Symlink .config/nixos to /etc/nixos? (requires sudo) [y/N]: "
+    read -r answer
+    if [ "$answer" = "y" ]; then
+        [ -e /etc/nixos ] && sudo mv /etc/nixos "/etc/nixos.backup-$(date +%Y%m%d-%H%M%S)"
+        sudo ln -s "$HOME/.config/nixos" /etc/nixos
+        echo "Linked /etc/nixos -> $HOME/.config/nixos"
+    fi
+else
+    echo "Skipping /etc/nixos symlink (nixos submodule not initialized)"
 fi
 
 echo "Done!"
