@@ -1,4 +1,3 @@
 function fish_greeting
-    echo ""
-    fortune
+    echo -e "\nHi :)"
 end
