@@ -6,13 +6,14 @@ Personal dotfiles managed with GNU stow and git submodules.
 
 ```bash
 cd /path/to/dotfiles
-./install.sh
+./scripts/dotstow
 ```
 
 This will:
-1. Initialize git submodules (nvim, nixos)
-2. Stow all configs to `$HOME`
-3. Optionally symlink `.config/nixos` to `/etc/nixos`
+1. Pull the latest dotfiles from the repository
+2. Update git submodules (nvim, nixos)
+3. Stow all configs to `$HOME`
+4. Optionally symlink `.config/nixos` to `/etc/nixos`
 
 ## Structure
 
@@ -26,8 +27,9 @@ dotfiles/
 │   ├── waybar/      # Status bar
 │   └── ...
 ├── scripts/         # Personal utility scripts
+│   └── dotstow      # Installation/update script
 ├── wallpapers/      # Desktop wallpapers
-└── install.sh       # Installation script
+└── README.md
 ```
 
 ## Manual Installation

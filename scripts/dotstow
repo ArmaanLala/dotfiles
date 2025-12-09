@@ -1,12 +1,22 @@
 #!/bin/sh
 # Dotfiles installation script
 
-DOTFILES="$(cd "$(dirname "$0")" && pwd)"
+DOTFILES="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Check for stow
 command -v stow >/dev/null 2>&1 || { echo "Error: GNU stow not installed"; exit 1; }
 
+# Pull latest changes
+echo "Pulling latest dotfiles..."
+cd "$DOTFILES" || exit 1
+git pull || { echo "Error: Failed to pull latest changes"; exit 1; }
+
+# Update submodules
+echo "Updating submodules..."
+git submodule update --init --recursive || { echo "Error: Failed to update submodules"; exit 1; }
+
 # Stow dotfiles to home (--adopt will move conflicting files into dotfiles)
+echo "Stowing dotfiles to \$HOME..."
 stow -v --adopt -d "$DOTFILES" -t "$HOME" .
 
 # Symlink NixOS configs to /etc/nixos (requires sudo)
