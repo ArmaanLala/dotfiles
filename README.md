@@ -87,15 +87,6 @@ sudo nixos-rebuild switch --flake /etc/nixos#atlas
 nh os switch
 ```
 
-## SSH Key Management
-
-SSH config is tracked in `.config/ssh/config`. Private keys are stored in gitignored `secrets/ssh/keys/`.
-
-To deploy SSH keys to a new machine:
-1. Copy keys to `secrets/ssh/keys/`
-2. Manually copy: `cp secrets/ssh/keys/* ~/.ssh/`
-3. Set permissions: `chmod 600 ~/.ssh/id_* && chmod 644 ~/.ssh/*.pub`
-
 ## Migration from Old Structure
 
 This repository was restructured from separate `home/` and `system/` directories. The old structure is available in the `backup-before-restructure` branch.
