@@ -21,7 +21,6 @@ fi
 # If pacman failed, try installing with paru
 paru -S "$pkg" --noconfirm
 if [ $? -eq 0 ]; then
-	echo $?
 	echo "$pkg installed successfully via paru."
 	exit 0
 else
