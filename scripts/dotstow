@@ -13,7 +13,16 @@ git pull || { echo "Error: Failed to pull latest changes"; exit 1; }
 
 # Update submodules
 echo "Updating submodules..."
-git submodule update --init --recursive || { echo "Error: Failed to update submodules"; exit 1; }
+git submodule sync --recursive
+if ! git submodule update --init --recursive; then
+    echo "Warning: Submodule update failed, attempting cleanup..."
+
+    # Try to fix common submodule issues
+    git submodule foreach --recursive git checkout main 2>/dev/null || true
+    git submodule foreach --recursive git pull 2>/dev/null || true
+
+    echo "Continuing with stow despite submodule issues..."
+fi
 
 # Stow dotfiles to home (--adopt will move conflicting files into dotfiles)
 echo "Stowing dotfiles to \$HOME..."
