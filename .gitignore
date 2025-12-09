@@ -1,5 +1,16 @@
 .config/zsh/.zcompdump
 
+# Backup files
+*.bak
+*~
+.#*
+
+# macOS specific files
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+
 # Local secrets (SSH keys)
 secrets/
 .ssh/id_*
@@ -11,4 +22,3 @@ secrets/
 
 # Apple internal scripts and network topology
 scripts/apple/
-scripts/hosts.txt
