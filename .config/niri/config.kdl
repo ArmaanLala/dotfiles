@@ -7,21 +7,30 @@ input {
         numlock
     }
 
-    touchpad {
-        tap
-        natural-scroll
+    mouse {
+        // Adjust mouse settings for desktop use if needed
+        // natural-scroll
+        // accel-speed 0.0
+        // accel-profile "flat"
     }
 
     focus-follows-mouse max-scroll-amount="95%"
     workspace-auto-back-and-forth
 }
 
-// output
-output "eDP-1" {
-    mode "3840x2400@60.0"
-    scale 2.5
+// outputs - dual 4K monitor setup
+output "DP-1" {
+    mode "3840x2160@60.0"
+    scale 1.5
     transform "normal"
-    position x=1280 y=0
+    position x=0 y=0
+}
+
+output "DP-2" {
+    mode "3840x2160@160.0"
+    scale 1.5
+    transform "normal"
+    position x=2560 y=0
 }
 
 // keybindings
@@ -32,7 +41,7 @@ binds {
     Mod+Return { spawn "ghostty"; }
     Mod+R { spawn "walker"; }
     Mod+Space { spawn "wofi"; }
-    Mod+B { spawn "zen-browser"; }
+    Mod+B { spawn "zen"; }
     Mod+Alt+L { spawn "swaylock"; }
     Mod+E { spawn "nautilus"; }
 
@@ -196,10 +205,11 @@ binds {
 }
 
 // startup
+spawn-at-startup "xwayland-satellite"
 spawn-at-startup "waybar"
-spawn-at-startup "elephant"
+// spawn-at-startup "elephant"  // not installed
 spawn-sh-at-startup "walker --gapplication-service"
-spawn-sh-at-startup "/usr/lib/polkit-kde-authentication-agent-1 &"
+// spawn-sh-at-startup "/usr/lib/polkit-kde-authentication-agent-1 &"  // NixOS path differs
 spawn-sh-at-startup "~/scripts/wallpaper.sh"
 
 hotkey-overlay {
@@ -297,7 +307,6 @@ window-rule {
 
 // environment
 environment {
-    DISPLAY ":1"
     ELECTRON_OZONE_PLATFORM_HINT "auto"
     QT_QPA_PLATFORM "wayland"
     QT_WAYLAND_DISABLE_WINDOWDECORATION "1"
