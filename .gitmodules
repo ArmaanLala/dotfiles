@@ -1,6 +1,6 @@
 [submodule ".config/nvim"]
 	path = .config/nvim
-	url = https://github.com/ArmaanLala/nvim.git
+	url = git@github.com:ArmaanLala/nvim.git
 [submodule ".config/nixos"]
 	path = .config/nixos
-	url = https://github.com/ArmaanLala/nixos.git
+	url = git@github.com:ArmaanLala/nixos.git
