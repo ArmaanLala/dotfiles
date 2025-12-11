@@ -234,7 +234,6 @@ layout {
     center-focused-column "always"
 
     preset-column-widths {
-        proportion 0.5
         proportion 0.8
     }
 
@@ -247,6 +246,8 @@ layout {
     border {
         off
     }
+	default-column-width { proportion 0.8; }
+
 
     shadow {
         softness 30
