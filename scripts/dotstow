@@ -1,56 +1,69 @@
 #!/bin/sh
 # Dotfiles installation script
 
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+NC="\033[0m"
+
 DOTFILES="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Check for stow
-command -v stow >/dev/null 2>&1 || { echo "Error: GNU stow not installed"; exit 1; }
+command -v stow >/dev/null 2>&1 || {
+    printf "${RED}Error: GNU stow not installed${NC}\n" >&2
+    exit 1
+}
 
 # Pull latest changes
-echo "Pulling latest dotfiles..."
+printf "${BLUE}Pulling latest dotfiles...${NC}\n"
 cd "$DOTFILES" || exit 1
-git pull || { echo "Error: Failed to pull latest changes"; exit 1; }
+git pull || {
+    printf "${RED}Error: Failed to pull latest changes${NC}\n" >&2
+    exit 1
+}
 
 # Clean up old submodule references from restructuring
 if [ -d ".git/modules/home" ]; then
-    echo "Cleaning up old git submodule references..."
+    printf "${BLUE}Cleaning up old git submodule references...${NC}\n"
     rm -rf .git/modules/home
 fi
 
 # Remove old home/ directory if it exists (from pre-restructure state)
 if [ -d "home" ]; then
-    echo "Removing old home/ directory from pre-restructure..."
+    printf "${BLUE}Removing old home/ directory...${NC}\n"
     rm -rf home
 fi
 
 # Update submodules
-echo "Updating submodules..."
+printf "${BLUE}Updating submodules...${NC}\n"
 git submodule sync --recursive
 if ! git submodule update --init --recursive; then
-    echo "Warning: Submodule update failed, attempting cleanup..."
+    printf "${YELLOW}Warning: Submodule update failed, attempting cleanup...${NC}\n"
 
     # Try to fix common submodule issues
     git submodule foreach --recursive git checkout main 2>/dev/null || true
     git submodule foreach --recursive git pull 2>/dev/null || true
 
-    echo "Continuing with stow despite submodule issues..."
+    printf "${YELLOW}Continuing with stow despite submodule issues...${NC}\n"
 fi
 
 # Stow dotfiles to home (--adopt will move conflicting files into dotfiles)
-echo "Stowing dotfiles to \$HOME..."
+printf "${BLUE}Stowing dotfiles to \$HOME...${NC}\n"
 stow -v --adopt -d "$DOTFILES" -t "$HOME" .
 
 # Symlink NixOS configs to /etc/nixos (requires sudo)
 if [ -d "$HOME/.config/nixos/.git" ] || [ -f "$HOME/.config/nixos/flake.nix" ]; then
-    printf "Symlink .config/nixos to /etc/nixos? (requires sudo) [y/N]: "
+    printf "${BLUE}Symlink .config/nixos to /etc/nixos? (requires sudo) [y/N]: ${NC}"
     read -r answer
     if [ "$answer" = "y" ]; then
         [ -e /etc/nixos ] && sudo mv /etc/nixos "/etc/nixos.backup-$(date +%Y%m%d-%H%M%S)"
         sudo ln -s "$HOME/.config/nixos" /etc/nixos
-        echo "Linked /etc/nixos -> $HOME/.config/nixos"
+        printf "${GREEN}Linked /etc/nixos -> $HOME/.config/nixos${NC}\n"
     fi
 else
-    echo "Skipping /etc/nixos symlink (nixos submodule not initialized)"
+    printf "${YELLOW}Skipping /etc/nixos symlink (nixos submodule not initialized)${NC}\n"
 fi
 
-echo "Done!"
+printf "${GREEN}Done!${NC}\n"
