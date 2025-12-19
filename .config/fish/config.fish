@@ -38,6 +38,7 @@ alias pman="sudo pacman -S"
 alias rm="rm -Iv"
 alias v="nvim"
 alias yay="paru"
+alias fmt="treefmt --config-file $XDG_CONFIG_HOME/treefmt.toml"
 
 # tools
 batman --export-env | source

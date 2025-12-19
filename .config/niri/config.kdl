@@ -49,7 +49,7 @@ binds {
     Mod+Return { spawn "ghostty"; }
     Mod+R { spawn "walker"; }
     Mod+Space { spawn "wofi"; }
-    Mod+B { spawn "zen"; }
+    Mod+B { spawn "firefox"; }
     Mod+Alt+L { spawn "swaylock"; }
     Mod+E { spawn "nautilus"; }
 
