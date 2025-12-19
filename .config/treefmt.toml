@@ -1,0 +1,67 @@
+[global]
+excludes = [
+  ".git/**",
+  "node_modules/**",
+  ".direnv/**",
+  "result/**",
+  "target/**",
+  "__pycache__/**",
+  ".venv/**",
+]
+
+# Nix
+[formatter.nixfmt]
+command = "nixfmt"
+includes = ["*.nix"]
+
+# Rust
+[formatter.rustfmt]
+command = "rustfmt"
+options = ["--edition", "2021"]
+includes = ["*.rs"]
+
+# Go
+[formatter.gofmt]
+command = "gofmt"
+options = ["-w"]
+includes = ["*.go"]
+
+# C/C++
+[formatter.clang-format]
+command = "clang-format"
+options = ["-i"]
+includes = ["*.c", "*.h", "*.cpp", "*.hpp", "*.cc", "*.cxx"]
+
+# Python
+[formatter.ruff-format]
+command = "ruff"
+options = ["format"]
+includes = ["*.py"]
+
+# Lua
+[formatter.stylua]
+command = "stylua"
+includes = ["*.lua"]
+
+# Shell
+[formatter.shfmt]
+command = "shfmt"
+options = ["-w"]
+includes = ["*.sh", "*.bash"]
+
+# TOML
+[formatter.taplo]
+command = "taplo"
+options = ["format"]
+includes = ["*.toml"]
+
+# YAML
+[formatter.yamlfmt]
+command = "yamlfmt"
+includes = ["*.yaml", "*.yml"]
+
+# JSON/Markdown
+[formatter.prettier]
+command = "prettier"
+options = ["--write"]
+includes = ["*.json", "*.md"]
