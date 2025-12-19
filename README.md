@@ -10,6 +10,7 @@ cd /path/to/dotfiles
 ```
 
 This will:
+
 1. Pull the latest dotfiles from the repository
 2. Update git submodules (nvim, nixos)
 3. Stow all configs to `$HOME`
@@ -35,16 +36,19 @@ dotfiles/
 ## Manual Installation
 
 ### Initialize submodules
+
 ```bash
 git submodule update --init --recursive
 ```
 
 ### Stow to home directory
+
 ```bash
 stow -v --adopt -d /path/to/dotfiles -t $HOME .
 ```
 
 ### Link NixOS configs (optional)
+
 ```bash
 sudo ln -s $HOME/.config/nixos /etc/nixos
 ```
@@ -62,11 +66,13 @@ sudo rm /etc/nixos
 ## Submodules
 
 ### Update submodules
+
 ```bash
 git submodule update --remote
 ```
 
 ### Update specific submodule
+
 ```bash
 cd .config/nvim
 git pull origin main

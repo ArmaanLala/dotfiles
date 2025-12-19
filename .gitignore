@@ -27,3 +27,5 @@ scripts/apple/
 .config/fish/fish_variables
 .config/fish/fish_variables
 .config/genai-bridge
+.claude
+CLAUDE.md
