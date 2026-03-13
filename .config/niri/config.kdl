@@ -231,7 +231,7 @@ screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 layout {
     gaps 5
 
-    center-focused-column "always"
+    center-focused-column "never"
 
     preset-column-widths {
         proportion 0.8

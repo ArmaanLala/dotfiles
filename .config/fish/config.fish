@@ -39,6 +39,7 @@ alias rm="rm -Iv"
 alias v="nvim"
 alias yay="paru"
 alias fmt="treefmt --config-file $XDG_CONFIG_HOME/treefmt.toml"
+alias pk="pkill -9 -f"
 
 # tools
 batman --export-env | source
