@@ -27,7 +27,7 @@ output "DP-1" {
 }
 
 output "DP-2" {
-    mode "3840x2160@160.0"
+    mode "3840x2160@160.000"
     scale 1.5
     transform "normal"
     position x=2560 y=0
@@ -39,6 +39,14 @@ output "eDP-1" {
     scale 2.5
     transform "normal"
     position x=0 y=0
+}
+
+output "HDMI-A-1" {
+    off
+}
+
+output "HDMI-A-2" {
+    off
 }
 
 // keybindings
