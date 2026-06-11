@@ -17,7 +17,8 @@
     ],
 
     "modules-center": [
-        "niri/workspaces"
+        "niri/workspaces",
+        "hyprland/workspaces"
     ],
 
     "modules-right": [

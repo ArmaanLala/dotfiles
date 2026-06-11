@@ -1,4 +1,4 @@
-background-opacity = 1
+background-opacity = 0.9
 background-blur = 20
 clipboard-read = allow
 clipboard-write = allow
@@ -6,4 +6,5 @@ copy-on-select = false
 font-size = 16
 font-family = JetBrainsMono
 theme = Carbonfox
+# sends ESC+CR on shift+enter, required for neovim to distinguish shift+enter
 keybind = shift+enter=text:\x1b\r

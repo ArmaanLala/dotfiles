@@ -23,9 +23,13 @@ secrets/
 # Apple internal scripts and network topology
 scripts/apple/
 
-# Fish shell variables
+# Fish shell variables and generated files
 .config/fish/fish_variables
-.config/fish/fish_variables
+.config/fish/conf.d/fish_frozen_key_bindings.fish
+
+# Editor artifacts
+*.swp
+*.swo
 .config/genai-bridge
 .claude
 CLAUDE.md

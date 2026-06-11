@@ -16,37 +16,36 @@ command -v stow >/dev/null 2>&1 || {
     exit 1
 }
 
-# Pull latest changes
-printf "${BLUE}Pulling latest dotfiles...${NC}\n"
-cd "$DOTFILES" || exit 1
-git pull || {
-    printf "${RED}Error: Failed to pull latest changes${NC}\n" >&2
-    exit 1
-}
-
-# Clean up old submodule references from restructuring
-if [ -d ".git/modules/home" ]; then
-    printf "${BLUE}Cleaning up old git submodule references...${NC}\n"
-    rm -rf .git/modules/home
-fi
-
-# Remove old home/ directory if it exists (from pre-restructure state)
-if [ -d "home" ]; then
-    printf "${BLUE}Removing old home/ directory...${NC}\n"
-    rm -rf home
+# Pull latest changes (skip with --no-pull)
+if [ "$1" != "--no-pull" ]; then
+    printf "${BLUE}Pulling latest dotfiles...${NC}\n"
+    cd "$DOTFILES" || exit 1
+    git pull || {
+        printf "${RED}Error: Failed to pull latest changes${NC}\n" >&2
+        exit 1
+    }
 fi
 
 # Update submodules
 printf "${BLUE}Updating submodules...${NC}\n"
+cd "$DOTFILES" || exit 1
 git submodule sync --recursive
 if ! git submodule update --init --recursive; then
     printf "${YELLOW}Warning: Submodule update failed, attempting cleanup...${NC}\n"
-
-    # Try to fix common submodule issues
     git submodule foreach --recursive git checkout main 2>/dev/null || true
     git submodule foreach --recursive git pull 2>/dev/null || true
-
     printf "${YELLOW}Continuing with stow despite submodule issues...${NC}\n"
+fi
+
+# Dry run first so the user can see what will be linked
+printf "${BLUE}Previewing changes (dry run)...${NC}\n"
+stow --no -v --adopt -d "$DOTFILES" -t "$HOME" . 2>&1
+
+printf "${YELLOW}Proceed with stow? [y/N]: ${NC}"
+read -r answer
+if [ "$answer" != "y" ]; then
+    printf "${YELLOW}Aborted.${NC}\n"
+    exit 0
 fi
 
 # Stow dotfiles to home (--adopt will move conflicting files into dotfiles)

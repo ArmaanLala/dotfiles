@@ -8,10 +8,7 @@ input {
     }
 
     touchpad {
-        // Adjust mouse settings for desktop use if needed
-         natural-scroll
-        // accel-speed 0.0
-        // accel-profile "flat"
+        natural-scroll
     }
 
     focus-follows-mouse max-scroll-amount="95%"
@@ -27,15 +24,14 @@ output "DP-1" {
 }
 
 output "DP-2" {
-    mode "3840x2160@160.000"
+    mode "3840x2160@160.0"
     scale 1.5
     transform "normal"
     position x=2560 y=0
 }
 
-
 output "eDP-1" {
-	mode "3840x2400@60.0"
+    mode "3840x2400@60.0"
     scale 2.5
     transform "normal"
     position x=0 y=0
@@ -55,8 +51,7 @@ binds {
 
     // apps
     Mod+Return { spawn "ghostty"; }
-    Mod+R { spawn "walker"; }
-    Mod+Space { spawn "wofi"; }
+    Mod+R { spawn "fuzzel"; }
     Mod+B { spawn "firefox"; }
     Mod+Alt+L { spawn "swaylock"; }
     Mod+E { spawn "nautilus"; }
@@ -223,10 +218,7 @@ binds {
 // startup
 spawn-at-startup "xwayland-satellite"
 spawn-at-startup "waybar"
-// spawn-at-startup "elephant"  // not installed
-spawn-sh-at-startup "walker --gapplication-service"
-// spawn-sh-at-startup "/usr/lib/polkit-kde-authentication-agent-1 &"  // NixOS path differs
-spawn-sh-at-startup "~/scripts/wallpaper.sh"
+spawn-sh-at-startup "/home/armaan/scripts/wallpaper.sh"
 
 hotkey-overlay {
     skip-at-startup
@@ -245,6 +237,8 @@ layout {
         proportion 0.8
     }
 
+    default-column-width { proportion 0.8; }
+
     focus-ring {
         width 3
         active-color "#00ac89"
@@ -254,8 +248,6 @@ layout {
     border {
         off
     }
-	default-column-width { proportion 0.8; }
-
 
     shadow {
         softness 30
@@ -263,8 +255,6 @@ layout {
         offset x=0 y=5
         color "#0007"
     }
-
-    struts {}
 }
 
 // animations
@@ -302,11 +292,6 @@ animations {
 }
 
 // window rules
-window-rule {
-    match app-id=r#"^org\.wezfurlong\.wezterm$"#
-    default-column-width {}
-}
-
 window-rule {
     match app-id="steam" title=r#"^notificationtoasts_\d+_desktop$"#
     default-floating-position x=10 y=10 relative-to="bottom-right"

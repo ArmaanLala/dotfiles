@@ -4,6 +4,8 @@
     "on-click": "activate"
   },
 
+  "hyprland/workspaces": {},
+
   // Taskbar
   "wlr/taskbar": {
     "format": "{icon}",
