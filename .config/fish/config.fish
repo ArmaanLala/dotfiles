@@ -15,8 +15,11 @@ if test (uname) = Darwin
 end
 
 alias c="clear"
+alias cl="claude"
+alias clr="claude --resume"
 alias df="df -h"
 alias du="du -h -d 1"
+alias glow="glow -p"
 alias jump="ssh -J jumpbox"
 alias k="killall"
 alias l="eza --color=auto --icons -h"
@@ -32,16 +35,16 @@ alias v="nvim"
 alias fmt="treefmt --config-file $HOME/.config/treefmt.toml"
 alias pk="pkill -9 -f"
 
-if command -v pacman > /dev/null
+if command -v pacman >/dev/null
     alias pman="sudo pacman -S"
     alias yay="paru"
 end
 
-if command -v bat > /dev/null
+if command -v bat >/dev/null
     alias cat="bat"
 end
 
-if command -v zoxide > /dev/null
+if command -v zoxide >/dev/null
     alias cd="z"
 end
 

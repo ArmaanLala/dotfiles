@@ -5,7 +5,7 @@ BLUE="\033[0;34m"
 RED="\033[0;31m"
 NC="\033[0m"
 
-folder="${2:-$HOME/wallpapers}"
+folder="${2:-$HOME/wallpapers/.}"
 input_image="$1"
 
 if [ -n "$input_image" ] && [ -f "$input_image" ]; then
