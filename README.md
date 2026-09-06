@@ -20,22 +20,34 @@ This will:
 
 ```
 dotfiles/
-├── .config/          # XDG user configurations
-│   ├── nvim/        # Neovim (submodule: github.com/ArmaanLala/nvim)
-│   ├── nixos/       # NixOS configs (submodule: github.com/ArmaanLala/nixos)
-│   ├── hypr/        # Hyprland compositor
-│   ├── fish/        # Fish shell
-│   ├── waybar/      # Status bar
-│   └── ...
-├── scripts/         # Personal utility scripts
-│   └── dotstow      # Installation/update script
-├── wallpapers/      # Desktop wallpapers
+├── .config/               # XDG user configs (stowed to ~/.config)
+│   ├── nvim/              # Neovim      (submodule: github.com/ArmaanLala/nvim)
+│   ├── nixos/             # NixOS       (submodule: github.com/ArmaanLala/nixos)
+│   ├── hypr/              # Hyprland compositor
+│   ├── niri/              # niri compositor
+│   ├── waybar/            # Status bar (config + modules.json + style.css + scripts/)
+│   ├── fish/              # Fish shell (config + functions/)
+│   ├── ghostty/           # Terminal
+│   ├── fuzzel/            # App launcher
+│   ├── walker/            # App launcher (alt)
+│   ├── dunst/             # Notifications
+│   ├── git/ignore         # Global gitignore (core.excludesfile)
+│   └── treefmt.toml       # treefmt formatter config
+├── scripts/               # Utility scripts (stowed to ~/scripts, on PATH)
+│   ├── dotstow            # Install / update script
+│   ├── install.sh         # Package install wrapper (pacman/brew/nix)
+│   ├── microbin.sh        # Paste-to-microbin helper
+│   └── wallpaper.sh       # Set / randomise wallpaper
+├── wallpapers/            # Desktop wallpapers (stowed to ~/wallpapers)
+├── .stow-local-ignore     # Paths stow must not link into ~
 └── README.md
 ```
 
 ## Manual Installation
 
 ### Initialize submodules
+
+Both submodules use SSH URLs, so SSH auth to GitHub must be set up first.
 
 ```bash
 git submodule update --init --recursive

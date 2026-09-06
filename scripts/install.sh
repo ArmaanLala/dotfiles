@@ -1,46 +1,54 @@
 #!/bin/sh
+# Install a package with whatever system package manager is available.
 
-# Colors
 GREEN="\033[0;32m"
 BLUE="\033[0;34m"
 YELLOW="\033[0;33m"
 RED="\033[0;31m"
 NC="\033[0m"
 
-if [ $# -eq 0 ]; then
-    printf "${RED}Usage: install.sh <package>${NC}\n" >&2
+info() { printf "${BLUE}%s${NC}\n" "$1"; }
+warn() { printf "${YELLOW}%s${NC}\n" "$1"; }
+ok() { printf "${GREEN}%s${NC}\n" "$1"; }
+fail() {
+    printf "${RED}%s${NC}\n" "$1" >&2
     exit 1
+}
+
+if [ $# -eq 0 ]; then
+    fail "Usage: install.sh <package>"
 fi
 
 pkg="$1"
 
 if command -v pacman > /dev/null; then
-    printf "${BLUE}Installing $pkg via pacman...${NC}\n"
+    info "Installing $pkg via pacman..."
     if sudo pacman -S "$pkg" --noconfirm; then
-        printf "${GREEN}$pkg installed via pacman.${NC}\n"
+        ok "$pkg installed via pacman."
         exit 0
     fi
     if command -v paru > /dev/null; then
-        printf "${YELLOW}Trying paru...${NC}\n"
+        warn "Trying paru..."
         if paru -S "$pkg" --noconfirm; then
-            printf "${GREEN}$pkg installed via paru.${NC}\n"
+            ok "$pkg installed via paru."
             exit 0
         fi
     fi
-    printf "${RED}Failed to install $pkg.${NC}\n" >&2
-    exit 1
+    fail "Failed to install $pkg."
 elif command -v brew > /dev/null; then
-    printf "${BLUE}Installing $pkg via brew...${NC}\n"
+    info "Installing $pkg via brew..."
     if brew install "$pkg"; then
-        printf "${GREEN}$pkg installed via brew.${NC}\n"
+        ok "$pkg installed via brew."
         exit 0
     fi
-    printf "${RED}Failed to install $pkg.${NC}\n" >&2
-    exit 1
+    fail "Failed to install $pkg."
 elif command -v nix > /dev/null; then
-    printf "${BLUE}Installing $pkg via nix shell...${NC}\n"
-    nix shell "nixpkgs#$pkg"
+    info "Installing $pkg via nix profile..."
+    if nix profile install "nixpkgs#$pkg"; then
+        ok "$pkg installed via nix profile."
+        exit 0
+    fi
+    fail "Failed to install $pkg."
 else
-    printf "${RED}No supported package manager found (pacman, brew, nix).${NC}\n" >&2
-    exit 1
+    fail "No supported package manager found (pacman, brew, nix)."
 fi

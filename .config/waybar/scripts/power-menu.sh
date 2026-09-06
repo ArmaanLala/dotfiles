@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Clicked from waybar (modules.json -> custom/power).
+# Clicked from waybar (modules.json -> custom/exit).
 set -euo pipefail
 
 options=("Lock" "Logout" "Suspend" "Reboot" "Shutdown")

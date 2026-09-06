@@ -14,7 +14,6 @@ if test (uname) = Darwin
     fish_add_path "$HOME/scripts/apple"
 end
 
-alias bv="xcodebuild build -scheme All | xcbeautify"
 alias c="clear"
 alias cl="claude"
 alias clr="claude --resume"
@@ -30,7 +29,6 @@ alias ls="eza --color=auto --icons -h"
 alias lz="lazygit"
 alias gps="git pull && git submodule update --init --recursive"
 alias mv="mv -i"
-alias ov="open Virtualization.xcworkspace"
 alias p="ps aux | grep"
 alias rm="rm -Iv"
 alias rgi="rg -i"
@@ -41,6 +39,12 @@ alias pk="pkill -9 -f"
 if command -v pacman >/dev/null
     alias pman="sudo pacman -S"
     alias yay="paru"
+end
+
+# macOS / Xcode-only
+if test (uname) = Darwin
+    alias bv="xcodebuild build -scheme All | xcbeautify"
+    alias ov="open Virtualization.xcworkspace"
 end
 
 if command -v bat >/dev/null

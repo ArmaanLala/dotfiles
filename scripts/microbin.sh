@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-MICROBIN_URL="${MICROBIN_URL:-https://paste.armaanlala.tech}"
+MICROBIN_URL="${MICROBIN_URL:-https://bin.armaanlala.tech}"
 
 # Colors
 GREEN="\033[0;32m"
@@ -28,7 +28,7 @@ upload_text() {
 # Entry point
 if [[ -n $1 ]]; then
     if [[ -f $1 ]]; then
-        printf "${BLUE}Choose upload method for '$1':${NC}\n"
+        printf "${BLUE}Choose upload method for '%s':${NC}\n" "$1"
         printf "1. Upload file directly (default)\n"
         printf "2. Upload file content as text\n"
         printf "Enter choice (1 or 2): "
@@ -57,12 +57,12 @@ elif [[ ! -t 0 ]]; then
     url=$(upload_text "@/dev/stdin")
 else
     error "No input provided."
-    printf "Usage:\n  $0 <text_string>\n  $0 <file_path>\n  command | $0\n"
+    printf "Usage:\n  %s <text_string>\n  %s <file_path>\n  command | %s\n" "$0" "$0" "$0"
     exit 1
 fi
 
 if [[ -n $url ]]; then
-    printf "${GREEN}Uploaded: ${BLUE}$url${NC}\n"
+    printf "${GREEN}Uploaded: ${BLUE}%s${NC}\n" "$url"
 else
     error "Upload failed or unexpected response."
     exit 1

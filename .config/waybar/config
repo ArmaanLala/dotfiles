@@ -7,7 +7,7 @@
     "spacing": 0,
 
     "include": [
-        "~/.config/waybar/modules.json"
+        "/home/armaan/.config/waybar/modules.json"
     ],
 
     "modules-left": [

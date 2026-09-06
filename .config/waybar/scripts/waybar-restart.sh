@@ -1,10 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env sh
+# Restart waybar: kill any running instances, wait for them to exit, relaunch.
 
-# Kill any running Waybar processes
-pkill -x waybar
+killall -q waybar
 
-# Wait briefly to ensure Waybar is fully terminated
-sleep 1
+while pgrep -x waybar >/dev/null; do sleep 0.2; done
 
-# Start Waybar again
 nohup waybar >/dev/null 2>&1 &

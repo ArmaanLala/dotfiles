@@ -1,10 +1,23 @@
-function notify
+function notify --description "Run a command, then send a desktop notification with its exit status"
     $argv
-    set STATUS $status
-    if test $STATUS -eq 0
-        osascript -e 'display notification "Done" with title "Terminal" sound name "Glass"'
+    set -l ret $status
+
+    set -l title Terminal
+    if test $ret -eq 0
+        set -l body "Done: $argv"
+        if test (uname) = Darwin
+            osascript -e 'display notification "'"$body"'" with title "'"$title"'" sound name "Glass"'
+        else if command -v notify-send >/dev/null
+            notify-send "$title" "$body"
+        end
     else
-        osascript -e 'display notification "Failed (exit '$STATUS')" with title "Terminal" sound name "Basso"'
+        set -l body "Failed (exit $ret): $argv"
+        if test (uname) = Darwin
+            osascript -e 'display notification "'"$body"'" with title "'"$title"'" sound name "Basso"'
+        else if command -v notify-send >/dev/null
+            notify-send -u critical "$title" "$body"
+        end
     end
-    return $STATUS
+
+    return $ret
 end
