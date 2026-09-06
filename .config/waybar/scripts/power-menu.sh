@@ -1,14 +1,30 @@
-#!/bin/bash
-options="Shutdown\nReboot\nLogout\nSuspend\nHibernate\nLock\nExit"
-chosen=$(echo -e "$options" | wofi --dmenu --prompt "Power Menu" --width 300 --height 234)
+#!/usr/bin/env bash
+# Clicked from waybar (modules.json -> custom/power).
+set -euo pipefail
 
-case $chosen in
-"Shutdown") systemctl poweroff ;;
-"Reboot") systemctl reboot ;;
-"Logout") niri msg action quit --skip-confirmation ;;
-"Suspend") systemctl suspend ;;
-"Hibernate") systemctl hibernate ;;
-"Lock") swaylock ;;
-"Exit") exit 0 ;;
-*) exit 1 ;;
+options=("Lock" "Logout" "Suspend" "Reboot" "Shutdown")
+
+# Hibernate needs somewhere to write the image. drapion has swap but no resume
+# device, so systemd would refuse it -- offering a button that can only fail is
+# worse than not offering one.
+[[ -r /sys/power/resume ]] && [[ "$(cat /sys/power/resume)" != "0:0" ]] &&
+	options+=("Hibernate")
+
+chosen=$(printf '%s\n' "${options[@]}" |
+	fuzzel --dmenu --prompt "power: " --lines "${#options[@]}" --width 20) || exit 0
+
+case "$chosen" in
+# Through logind, so it takes the same path as hypridle's timer and the
+# SUPER+SHIFT+L bind and only ever spawns one hyprlock.
+Lock) loginctl lock-session ;;
+# Compositor-agnostic: ends the session whether it came from uwsm/Hyprland or
+# niri, instead of guessing which quit command exists.
+Logout) loginctl terminate-session "${XDG_SESSION_ID:-self}" ;;
+# Deliberate suspend. Nothing suspends on idle any more -- this button and
+# the sleep key are the only paths to S3.
+Suspend) systemctl suspend ;;
+Reboot) systemctl reboot ;;
+Shutdown) systemctl poweroff ;;
+Hibernate) systemctl hibernate ;;
+*) exit 0 ;;
 esac
