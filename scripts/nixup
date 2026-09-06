@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Rebuild hosts from the latest origin/main -- one tmux pane each, live `nh`
 # build output, all in parallel. Each host builds itself (same as the daily
-# nixos-upgrade timer, just now). Panes stay open when done so you can read the
-# diff; `Ctrl-b &` kills the session.
+# nixos-upgrade timer, just now) and reboots into it on success. A pane still
+# alive after the others are gone = that host's build failed; `Ctrl-b &` kills
+# the session.
 #
 #   nixup                  all hosts
 #   nixup webster atlas    just those
@@ -13,7 +14,7 @@ set -euo pipefail
 hosts=("$@")
 [ ${#hosts[@]} -eq 0 ] && hosts=(atlas proton lenix webster)
 
-cmd="nh os switch --refresh github:ArmaanLala/nixos"
+cmd="nh os switch --refresh github:ArmaanLala/nixos && sudo reboot"
 s=nixup
 
 tmux kill-session -t "$s" 2>/dev/null || true
