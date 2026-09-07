@@ -6,5 +6,4 @@ copy-on-select = false
 font-size = 16
 font-family = JetBrainsMono
 theme = Carbonfox
-# sends ESC+CR on shift+enter, required for neovim to distinguish shift+enter
 keybind = shift+enter=text:\x1b\r

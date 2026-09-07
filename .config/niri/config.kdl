@@ -1,4 +1,3 @@
-// input
 input {
     keyboard {
         xkb {
@@ -15,7 +14,6 @@ input {
     workspace-auto-back-and-forth
 }
 
-// outputs - dual 4K monitor setup
 output "DP-1" {
     mode "3840x2160@60.0"
     scale 1.5
@@ -45,21 +43,17 @@ output "HDMI-A-2" {
     off
 }
 
-// keybindings
 binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
-    // apps
     Mod+Return { spawn "ghostty"; }
     Mod+R { spawn "fuzzel"; }
     Mod+B { spawn "firefox"; }
     Mod+Alt+L { spawn "swaylock"; }
     Mod+E { spawn "nautilus"; }
 
-    // screen reader
     Super+Alt+S allow-when-locked=true { spawn-sh "pkill orca || exec orca"; }
 
-    // audio
     XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"; }
     XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
     XF86AudioMute allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
@@ -69,11 +63,9 @@ binds {
     XF86AudioPlay allow-when-locked=true { spawn-sh "playerctl play-pause"; }
     XF86AudioPrev allow-when-locked=true { spawn-sh "playerctl previous"; }
 
-    // brightness
     XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "+10%"; }
     XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "10%-"; }
 
-    // window management
     Mod+Q repeat=false { close-window; }
 
     Mod+Left { focus-column-left; }
@@ -119,7 +111,6 @@ binds {
     Mod+Shift+Ctrl+K { move-column-to-monitor-up; }
     Mod+Shift+Ctrl+L { move-column-to-monitor-right; }
 
-    // workspace navigation
     Mod+Page_Down { focus-workspace-down; }
     Mod+Page_Up { focus-workspace-up; }
     Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
@@ -132,7 +123,6 @@ binds {
     Mod+Shift+U { move-workspace-down; }
     Mod+Shift+I { move-workspace-up; }
 
-    // mouse wheel
     Mod+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
     Mod+WheelScrollUp cooldown-ms=150 { focus-workspace-up; }
     Mod+Ctrl+WheelScrollDown cooldown-ms=150 { move-column-to-workspace-down; }
@@ -148,7 +138,6 @@ binds {
     Mod+Ctrl+Shift+WheelScrollDown { move-column-right; }
     Mod+Ctrl+Shift+WheelScrollUp { move-column-left; }
 
-    // workspace numbers
     Mod+1 { focus-workspace 1; }
     Mod+2 { focus-workspace 2; }
     Mod+3 { focus-workspace 3; }
@@ -171,13 +160,11 @@ binds {
 
     Mod+Tab { focus-workspace-previous; }
 
-    // column management
     Mod+BracketLeft { consume-or-expel-window-left; }
     Mod+BracketRight { consume-or-expel-window-right; }
     Mod+Comma { consume-window-into-column; }
     Mod+Period { expel-window-from-column; }
 
-    // layout
     Mod+D { switch-preset-column-width; }
     Mod+Shift+R { switch-preset-window-height; }
     Mod+Ctrl+R { reset-window-height; }
@@ -193,29 +180,23 @@ binds {
     Mod+Shift+Minus { set-window-height "-10%"; }
     Mod+Shift+Equal { set-window-height "+10%"; }
 
-    // modes
     Mod+V { toggle-window-floating; }
     Mod+Shift+V { switch-focus-between-floating-and-tiling; }
     Mod+W { toggle-column-tabbed-display; }
 
-    // screenshots
     Print { screenshot; }
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
 
-    // overview
     Mod+O repeat=false { toggle-overview; }
 
-    // escape hatch
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
 
-    // exit
     Mod+Shift+E { quit; }
     Ctrl+Alt+Delete { quit; }
     Mod+Shift+P { power-off-monitors; }
 }
 
-// startup
 spawn-at-startup "xwayland-satellite"
 spawn-at-startup "waybar"
 spawn-sh-at-startup "/home/armaan/scripts/wallpaper.sh"
@@ -227,7 +208,6 @@ hotkey-overlay {
 prefer-no-csd
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
-// layout
 layout {
     gaps 5
 
@@ -257,7 +237,6 @@ layout {
     }
 }
 
-// animations
 animations {
     workspace-switch {
         spring damping-ratio=1.0 stiffness=1000 epsilon=0.0001
@@ -291,7 +270,6 @@ animations {
     }
 }
 
-// window rules
 window-rule {
     match app-id="steam" title=r#"^notificationtoasts_\d+_desktop$"#
     default-floating-position x=10 y=10 relative-to="bottom-right"
@@ -307,7 +285,6 @@ window-rule {
     clip-to-geometry true
 }
 
-// environment
 environment {
     ELECTRON_OZONE_PLATFORM_HINT "auto"
     QT_QPA_PLATFORM "wayland"

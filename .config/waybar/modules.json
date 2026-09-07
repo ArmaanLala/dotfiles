@@ -1,12 +1,9 @@
 {
-  // Workspaces (niri and hyprland modules coexist; waybar ignores the
-  // one whose compositor isn't running)
   "niri/workspaces": {
     "on-click": "activate"
   },
   "hyprland/workspaces": {},
 
-  // Taskbar
   "wlr/taskbar": {
     "format": "{icon}",
     "icon-size": 18,
@@ -23,7 +20,6 @@
     }
   },
 
-  // Active window title (niri)
   "niri/window": {
     "format": "{}",
     "rewrite": {
@@ -36,33 +32,28 @@
     "separate-outputs": true
   },
 
-  // Application launcher
   "custom/appmenu": {
     "format": "   ",
     "on-click": "sleep 0.2; fuzzel",
     "tooltip-format": "Open the application launcher"
   },
 
-  // Power menu
   "custom/exit": {
     "format": " 󰐥 ",
     "on-click": "/home/armaan/.config/waybar/scripts/power-menu.sh",
     "tooltip-format": "Power Menu"
   },
 
-  // System tray
   "tray": {
     "icon-size": 21,
     "spacing": 10
   },
 
-  // Clock
   "clock": {
     "format": "{:%H:%M %a}",
     "tooltip": false
   },
 
-  // Battery
   "battery": {
     "states": {
       "warning": 30,
@@ -75,7 +66,6 @@
     "format-icons": [" ", " ", " ", " ", " "]
   },
 
-  // Pulseaudio
   "pulseaudio": {
     "format": "{icon}  {volume}%",
     "format-bluetooth": "{volume}% {icon} {format_source}",

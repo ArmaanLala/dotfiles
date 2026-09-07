@@ -8,21 +8,18 @@ window#waybar {
     font-size: 14px;
 }
 
-/* Left-most: app menu */
 #custom-appmenu {
     font-size: 14px;
     background-color: #1e222a;
     padding: 0px 12px;
 }
 
-/* Right-most: Clock */
 #clock {
     background-color: #1e222a;
     color: #c0c0c0;
     padding: 0px 8px;
 }
 
-/* Active window title */
 #window {
     font-size: 14px;
     font-weight: 800;
@@ -31,7 +28,6 @@ window#waybar {
     background-color: #1e222a;
 }
 
-/* Workspace container */
 #niri-workspaces,
 #workspaces {
     background: #1e222a;
@@ -57,7 +53,6 @@ window#waybar {
     border-width: 0px;
 }
 
-/* Power/exit button */
 #custom-exit {
     background-color: #00ac89;
     font-size: 14px;
@@ -67,7 +62,6 @@ window#waybar {
     margin: 2px 2px 2px 0;
 }
 
-/* Tooltips */
 tooltip {
     border-radius: 12px;
     background-color: #0f1117;
@@ -75,13 +69,11 @@ tooltip {
     padding: 4px 8px;
 }
 
-/* Taskbar */
 #taskbar {
     background-color: #1e222a;
     font-weight: normal;
 }
 
-/* All system info modules */
 #backlight,
 #pulseaudio,
 #network,
@@ -97,7 +89,6 @@ tooltip {
     padding: 4px 10px;
 }
 
-/* Battery critical warning */
 #battery.critical:not(.charging) {
     background-color: #e65100;
     color: #ffffff;

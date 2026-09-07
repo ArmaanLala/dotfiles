@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-# Restart waybar: kill any running instances, wait for them to exit, relaunch.
 
 killall -q waybar
 

@@ -1,27 +1,20 @@
 #!/usr/bin/env bash
-# Rebuild hosts from the latest origin/main -- one tmux pane each, live `nh`
-# build output, all in parallel. Each host builds itself (same as the daily
-# nixos-upgrade timer, just now) and reboots into it on success. A pane still
-# alive after the others are gone = that host's build failed; `Ctrl-b &` kills
-# the session.
-#
-#   nixup                  all hosts
-#   nixup webster atlas    just those
 set -euo pipefail
 
-# Default: the always-on servers. Workstations (beard/thinkpad) are rebuilt
-# interactively, pass them explicitly if you want.
 hosts=("$@")
 [ ${#hosts[@]} -eq 0 ] && hosts=(atlas proton lenix webster)
 
+offset=${NIXUP_OFFSET:-30}
 cmd="nh os switch --refresh github:ArmaanLala/nixos && sudo reboot"
 s=nixup
 
 tmux kill-session -t "$s" 2>/dev/null || true
 tmux new-session -d -s "$s" "ssh -t ${hosts[0]} '$cmd'"
 tmux set-option -t "$s" remain-on-exit on
+i=1
 for h in "${hosts[@]:1}"; do
-  tmux split-window -t "$s" "ssh -t $h '$cmd'"
+  tmux split-window -t "$s" "sleep $((i * offset)) && ssh -t $h '$cmd'"
   tmux select-layout -t "$s" tiled
+  i=$((i + 1))
 done
 exec tmux attach -t "$s"

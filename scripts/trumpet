@@ -1,4 +1,2 @@
 #!/usr/bin/env bash
-# Rebuild the trumpet-snipes leaderboard JSON now (webster also runs it every
-# 30 min). Runs the systemd unit as-is; blocks until it finishes.
 exec ssh -t webster 'sudo systemctl start --wait trumpet-snipes-json.service && journalctl -u trumpet-snipes-json.service -n 5 --no-pager'

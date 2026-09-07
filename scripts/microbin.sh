@@ -2,7 +2,6 @@
 
 MICROBIN_URL="${MICROBIN_URL:-https://bin.armaanlala.tech}"
 
-# Colors
 GREEN="\033[0;32m"
 BLUE="\033[0;34m"
 RED="\033[0;31m"
@@ -12,7 +11,6 @@ error() {
     printf "${RED}Error: %s${NC}\n" "$1" >&2
 }
 
-# Extract final URL from curl response
 mbclean() {
     grep -i '^location:' | sed -E 's!location: .*/upload/!'"$MICROBIN_URL/p/"'!' | tr -d '\r'
 }
@@ -25,7 +23,6 @@ upload_text() {
     curl -s -i --max-time 60 -X POST "$MICROBIN_URL/upload" -F "content=$1" -F "syntax_highlight=auto" | mbclean
 }
 
-# Entry point
 if [[ -n $1 ]]; then
     if [[ -f $1 ]]; then
         printf "${BLUE}Choose upload method for '%s':${NC}\n" "$1"
@@ -39,7 +36,6 @@ if [[ -n $1 ]]; then
             url=$(upload_file "$1")
             ;;
         2)
-            # @filename tells curl to read the file contents as the field value
             url=$(upload_text "@$1")
             ;;
         *)

@@ -1,5 +1,4 @@
 #!/bin/sh
-# Install a package with whatever system package manager is available.
 
 GREEN="\033[0;32m"
 BLUE="\033[0;34m"

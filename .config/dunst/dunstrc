@@ -1,59 +1,34 @@
-# Only non-default settings belong here -- dunst's shipped
-# etc/dunst/dunstrc is a real config layer, so restating a default is a no-op.
-
 [global]
-    ### Display ###
-    # Pin to the Gigabyte M27U by connector name, not index: dunst's numbering
-    # is its own wayland enumeration order (not hyprland's) and shifts on
-    # replug. Only applies while follow stays none -- any other value makes
-    # dunst track the pointer and ignore monitor entirely.
-    # NOTE: the thinkpad host stows this same file and has no DP-2; it falls
-    # back to its only output. Per-host pinning goes in dunstrc.d/*.conf.
-    # dunst logs "'DP-2': No digits found" on load -- harmless, it just tries a
-    # numeric parse before the name lookup. Verified working via hyprctl layers.
     monitor = DP-2
     follow = none
 
-    ### Geometry ###
     width = (100, 300)
-    # offset is from the *usable* area, not the screen edge: waybar
-    # reserves a 34px exclusive zone, so y is measured from below the bar.
     offset = (5, 5)
     notification_limit = 10
 
-    ### Progress bar (volume/brightness style hints) ###
     progress_bar_height = 14
     progress_bar_frame_width = 0
     progress_bar_min_width = 100
-    # fully rounded = half the bar height; dunst clamps anything larger
     progress_bar_corner_radius = 7
     progress_bar_corners = bottom-left, top-right
 
-    ### Appearance ###
     padding = 10
     text_icon_padding = 12
     frame_width = 1
-    # gap_size > 0 makes dunst ignore separator_height/separator_color entirely
     gap_size = 6
     idle_threshold = 120
     corner_radius = 10
     corners = bottom, top-left
 
-    ### Text ###
     font = JetBrainsMono Nerd Font 13
-    # bold summary, body on its own line
     format = "<b>%s</b>\n%b"
 
-    ### Icons ###
-    # compiled default is false despite what the shipped dunstrc suggests
     enable_recursive_icon_lookup = true
     icon_theme = Papirus-Dark, Papirus, hicolor
     icon_position = right
 
-    ### History ###
     history_length = 40
 
-    ### Misc ###
     dmenu = /usr/bin/env fuzzel --dmenu
     browser = /usr/bin/env xdg-open
     mouse_left_click = do_action, close_current

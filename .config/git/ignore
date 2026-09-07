@@ -1,14 +1,9 @@
-# Global gitignore (git reads $XDG_CONFIG_HOME/git/ignore by default).
-# Repo-specific rules live in each repo's own .gitignore.
-
-# OS
 .DS_Store
 **/.DS_Store
 .AppleDouble
 .LSOverride
 Thumbs.db
 
-# Editor / tooling artifacts
 *.swp
 *.swo
 *~
@@ -18,6 +13,5 @@ Thumbs.db
 CLAUDE.md
 **/.claude/settings.local.json
 
-# Build outputs
 result
 result-*

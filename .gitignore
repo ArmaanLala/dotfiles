@@ -1,31 +1,24 @@
-# Backup files
 *.bak
 *~
 .#*
 
-# macOS specific files
 .DS_Store
 **/.DS_Store
 .AppleDouble
 .LSOverride
 
-# Local secrets (SSH keys)
 secrets/
 .ssh/id_*
 .ssh/*.key
 .ssh/known_hosts
 
-# Stow conflicts
 .stow-*
 
-# Apple internal scripts and network topology
 scripts/apple/
 
-# Fish shell variables and generated files
 .config/fish/fish_variables
 .config/fish/conf.d/fish_frozen_key_bindings.fish
 
-# Editor artifacts
 *.swp
 *.swo
 .config/genai-bridge
