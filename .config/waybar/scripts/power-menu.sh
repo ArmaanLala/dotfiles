@@ -4,7 +4,7 @@ set -euo pipefail
 
 options=("Lock" "Logout" "Suspend" "Reboot" "Shutdown")
 
-# Hibernate needs somewhere to write the image. drapion has swap but no resume
+# Hibernate needs somewhere to write the image. bread has swap but no resume
 # device, so systemd would refuse it -- offering a button that can only fail is
 # worse than not offering one.
 [[ -r /sys/power/resume ]] && [[ "$(cat /sys/power/resume)" != "0:0" ]] &&

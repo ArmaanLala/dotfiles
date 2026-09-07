@@ -1,110 +1,44 @@
 # Dotfiles
 
-Personal dotfiles managed with GNU stow and git submodules.
-
-## Quick Start
+Personal dotfiles, managed with GNU stow and git submodules.
 
 ```bash
-cd /path/to/dotfiles
-./scripts/dotstow
+./scripts/dotstow          # pull, update submodules, stow to ~, optionally link /etc/nixos
 ```
 
-This will:
+Submodules use SSH URLs, so GitHub SSH auth must be set up first. Manual:
 
-1. Pull the latest dotfiles from the repository
-2. Update git submodules (nvim, nixos)
-3. Stow all configs to `$HOME`
-4. Optionally symlink `.config/nixos` to `/etc/nixos`
+```bash
+git submodule update --init --recursive
+stow -v --adopt -d "$PWD" -t "$HOME" .
+sudo ln -s ~/.config/nixos /etc/nixos          # optional
+```
 
 ## Structure
 
 ```
-dotfiles/
-├── .config/               # XDG user configs (stowed to ~/.config)
-│   ├── nvim/              # Neovim      (submodule: github.com/ArmaanLala/nvim)
-│   ├── nixos/             # NixOS       (submodule: github.com/ArmaanLala/nixos)
-│   ├── hypr/              # Hyprland compositor
-│   ├── niri/              # niri compositor
-│   ├── waybar/            # Status bar (config + modules.json + style.css + scripts/)
-│   ├── fish/              # Fish shell (config + functions/)
-│   ├── ghostty/           # Terminal
-│   ├── fuzzel/            # App launcher
-│   ├── walker/            # App launcher (alt)
-│   ├── dunst/             # Notifications
-│   ├── git/ignore         # Global gitignore (core.excludesfile)
-│   └── treefmt.toml       # treefmt formatter config
-├── scripts/               # Utility scripts (stowed to ~/scripts, on PATH)
-│   ├── dotstow            # Install / update script
-│   ├── install.sh         # Package install wrapper (pacman/brew/nix)
-│   ├── microbin.sh        # Paste-to-microbin helper
-│   └── wallpaper.sh       # Set / randomise wallpaper
-├── wallpapers/            # Desktop wallpapers (stowed to ~/wallpapers)
-├── .stow-local-ignore     # Paths stow must not link into ~
-└── README.md
+.config/
+  nvim/          Neovim        (submodule: github.com/ArmaanLala/nvim)
+  nixos/         NixOS flake   (submodule: github.com/ArmaanLala/nixos)
+  hypr/ niri/    compositors
+  waybar/        status bar
+  fish/          shell (config + functions/)
+  ghostty/ fuzzel/ dunst/ git/ treefmt.toml
+scripts/         stowed to ~/scripts (on PATH)
+  dotstow        install / update
+  install.sh     package-install wrapper (pacman/brew/nix)
+  microbin.sh    paste to bin.armaanlala.tech
+  wallpaper.sh   set / randomise wallpaper
+  nixup trumpet  remote NixOS fleet helpers (see .config/nixos)
+wallpapers/      stowed to ~/wallpapers
+.stow-local-ignore   paths stow must not link into ~
 ```
 
-## Manual Installation
-
-### Initialize submodules
-
-Both submodules use SSH URLs, so SSH auth to GitHub must be set up first.
-
-```bash
-git submodule update --init --recursive
-```
-
-### Stow to home directory
-
-```bash
-stow -v --adopt -d /path/to/dotfiles -t $HOME .
-```
-
-### Link NixOS configs (optional)
-
-```bash
-sudo ln -s $HOME/.config/nixos /etc/nixos
-```
-
-## Uninstall
-
-```bash
-# Remove stowed dotfiles
-stow -D -d /path/to/dotfiles -t $HOME .
-
-# Remove NixOS symlink
-sudo rm /etc/nixos
-```
+Hardcoded absolute paths (`/home/armaan/scripts/…`) are intentional.
 
 ## Submodules
 
-### Update submodules
-
 ```bash
-git submodule update --remote
+git submodule update --remote        # bump both to their tracked branch
+git -C .config/nvim pull && git add .config/nvim && git commit -m "nvim"
 ```
-
-### Update specific submodule
-
-```bash
-cd .config/nvim
-git pull origin main
-cd ../..
-git add .config/nvim
-git commit -m "update: nvim submodule"
-```
-
-## NixOS
-
-After symlinking `/etc/nixos`:
-
-```bash
-# Rebuild system
-sudo nixos-rebuild switch --flake /etc/nixos#atlas
-
-# Or using nh
-nh os switch
-```
-
-## Migration from Old Structure
-
-This repository was restructured from separate `home/` and `system/` directories. The old structure is available in the `backup-before-restructure` branch.
